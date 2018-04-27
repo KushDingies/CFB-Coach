@@ -1488,7 +1488,7 @@ public class MainActivity extends AppCompatActivity {
 
         builder.setTitle(g.awayTeam.abbr + " @ " + g.homeTeam.abbr + ": " + g.gameName)
                 .setView(getLayoutInflater().inflate(R.layout.ingame_dialog, null));
-        AlertDialog dialog = builder.create();
+        final AlertDialog dialog = builder.create();
         dialog.show();
 
         final TextView awayTeamScoreText = dialog.findViewById(R.id.ingameDialogScoreAway);
@@ -1501,20 +1501,44 @@ public class MainActivity extends AppCompatActivity {
         final TextView playStatusText = dialog.findViewById(R.id.ingameDialogPlayStatus);
         final TextView prevPlayText = dialog.findViewById(R.id.ingameDialogPreviousPlay);
 
-        gametimeText.setText(g.convGameTime());
+        gametimeText.setText("Pregame");
         awayTeamScoreText.setText(Integer.toString(g.awayScore));
         homeTeamScoreText.setText(Integer.toString(g.homeScore));
         g.setupGame();
         playStatusText.setText(g.playInfo);
         prevPlayText.setText(g.lastPlayLog);
 
-        Button runPlayButton = dialog.findViewById(R.id.buttonRunNextPlay);
+        final Button runPlayButton = dialog.findViewById(R.id.buttonRunNextPlay);
         runPlayButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+
+                if (g.hasPlayed) {
+                    // game is over, just close the window or something
+                    onUserGameFinished();
+                    dialog.dismiss();
+                    return;
+                }
+
                 gametimeText.setText(g.convGameTime());
                 awayTeamScoreText.setText(Integer.toString(g.awayScore));
                 homeTeamScoreText.setText(Integer.toString(g.homeScore));
                 g.runPlay();
+
+                if (g.regulationIsOver()) {
+                    if (g.playingOT) {
+                        // we are in overtime.
+                    } else if (!g.hasPlayed) {
+                        // not in overtime but game isn't over -  regulation just ended, we may be entering overtime
+                        g.atClockZero();
+
+                        if (!g.playingOT) {
+                            // game is over.
+                            g.postGame();
+                            runPlayButton.setText("Finish game");
+                        }
+                    }
+                }
+
                 playStatusText.setText(g.playInfo);
                 prevPlayText.setText(g.lastPlayLog);
             }

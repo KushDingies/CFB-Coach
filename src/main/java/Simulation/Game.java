@@ -36,7 +36,6 @@ public class Game implements Serializable {
     }
 
     public boolean hasPlayed;
-    public boolean isPlayerGame = false;
     private boolean QT1;
     private boolean QT2;
     private boolean QT3;
@@ -87,12 +86,13 @@ public class Game implements Serializable {
 
     //private variables used when simming games
     private int gameTime;
+    public boolean regulationIsOver() { return gameTime <= 0; }
     private boolean gamePoss; //1 if home, 0 if away
     private int gameYardLine;
     private int gameYardLinePlay;
     private int gameDown;
     private int gameYardsNeed;
-    private boolean playingOT;
+    public boolean playingOT;
     private boolean bottomOT;
 
     private final int timePerPlay = 22; //affects snaps per game!
@@ -456,10 +456,16 @@ public class Game implements Serializable {
 
             atClockZero();
 
+            while (playingOT) {
+                runPlay();
+            }
+
+            postGame();
+
         }
     }
 
-    private void atClockZero() {
+    public void atClockZero() {
 
         // Add last play
         if (homeScore != awayScore) {
@@ -478,11 +484,16 @@ public class Game implements Serializable {
             gameDown = 1;
             gameYardsNeed = 10;
 
-            while (playingOT) {
-                runPlay();
-            }
         }
 
+        if (!playingOT) {
+            hasPlayed = true;
+        }
+
+
+    }
+
+    public void postGame() {
         //game over, add wins
         if (homeScore > awayScore) {
             homeTeam.wins++;
