@@ -155,7 +155,7 @@ public class Home extends AppCompatActivity {
                 Intent intent = new Intent();
                 intent.setAction(Intent.ACTION_VIEW);
                 intent.addCategory(Intent.CATEGORY_BROWSABLE);
-                intent.setData(Uri.parse("https://github.com/antdroidx/CFB-Coach"));
+                intent.setData(Uri.parse("https://github.com/KushDingies/CFB-Coach"));
                 startActivity(intent);
             }
         });
