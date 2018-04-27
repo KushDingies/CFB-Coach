@@ -4,8 +4,6 @@ import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.Random;
 
 import Comparator.CompGamePlayerPicker;
 import Comparator.CompPlayerPosition;
@@ -530,15 +528,15 @@ public class Game implements Serializable {
                     fieldGoalAtt(offense, defense);
                 } else {
                     //hail mary
-                    passingPlay(offense, defense);
+                    setupPassingPlay(offense, defense);
                 }
             } else if (gameDown >= 4) {
                 if (((gamePoss && (awayScore - homeScore) > 3) || (!gamePoss && (homeScore - awayScore) > 3)) && gameTime < 300) {
                     //go for it since we need 7 to win -- This also forces going for it if down by a TD in BOT OT
                     if (gameYardsNeed < 3 && preferRush * 3 > preferPass) {
-                        rushingPlay(offense, defense);
+                        setupRushingPlay(offense, defense);
                     } else {
-                        passingPlay(offense, defense);
+                        setupPassingPlay(offense, defense);
                     }
                 } else {
                     //4th down
@@ -548,7 +546,7 @@ public class Game implements Serializable {
                             fieldGoalAtt(offense, defense);
                         } else if (gameYardLine > 55) {
                             // run play, go for it!
-                            rushingPlay(offense, defense);
+                            setupRushingPlay(offense, defense);
                         } else {
                             //punt
                             puntPlay(offense, defense);
@@ -563,17 +561,17 @@ public class Game implements Serializable {
                 }
             } else if ((gameDown == 3 && gameYardsNeed > 4) || ((gameDown == 1 || gameDown == 2) && (preferPass >= preferRush))) {
                 // pass play
-                passingPlay(offense, defense);
+                setupPassingPlay(offense, defense);
             } else {
                 //run play
-                rushingPlay(offense, defense);
+                setupRushingPlay(offense, defense);
             }
         }
 
 
     }
 
-    private void passingPlay(Team offense, Team defense) {
+    private void setupPassingPlay(Team offense, Team defense) {
         int x = 0;
         if (gameTime < 900 && gamePoss && (homeScore - awayScore) >= 20 + gameTime / 60) {
             x = 1;
@@ -756,7 +754,7 @@ public class Game implements Serializable {
 
     }
 
-    private void rushingPlay(Team offense, Team defense) {
+    private void setupRushingPlay(Team offense, Team defense) {
         int x = 0;
         if (gameTime < 900 && gamePoss && (homeScore - awayScore) >= 20 + gameTime / 60) {
             x = 1;
