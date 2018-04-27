@@ -1675,9 +1675,9 @@ public class Game implements Serializable {
         } else {
             if (gameYardLine <= 0) {
                 gameYardLine = touchback;
-                gameLog("\n\nPunt!\n" + returner.team + " " + returner.name + " lets it go for a touchback.");
+                gameLog("\nPunt!\n" + returner.team + " " + returner.name + " lets it go for a touchback.");
             } else {
-                gameLog("\n\nPunt!\n" + returner.team + " " + returner.name + " returns the punt to the " + gameYardLine + " yard line.");
+                gameLog("\nPunt!\n" + returner.team + " " + returner.name + " returns the punt to the " + gameYardLine + " yard line.");
             }
         }
 
@@ -1843,9 +1843,9 @@ public class Game implements Serializable {
         }
 
         if (selRB.gameSim >= selQB.gameSim) {
-            gameLog(playInfo, "FUMBLE!\n" + offense.abbr + " RB " + selRB.name + " fumbled the ball while rushing and recovered by " + defender + ".", true);
+            gameLog(playInfo, "\nFUMBLE!\n" + offense.abbr + " RB " + selRB.name + " fumbled the ball while rushing and recovered by " + defender + ".", true);
         } else {
-            gameLog(playInfo, "FUMBLE!\n" + offense.abbr + " QB " + selQB.name + " fumbled the ball while rushing and recovered by " + defender + ".", true);
+            gameLog(playInfo, "\nFUMBLE!\n" + offense.abbr + " QB " + selQB.name + " fumbled the ball while rushing and recovered by " + defender + ".", true);
         }
 
     }
@@ -2345,14 +2345,14 @@ public class Game implements Serializable {
             //Set Player Fatigue +50
             recoup(true, 1);
             gameTime = 2700;
-            gameLog("\n\n-- 2nd QUARTER --", true);
+            gameLog("\n\n-- 2nd QUARTER --\n\n", true);
 
         } else if (gameTime < 1800 && !QT2) {
             QT2 = true;
             //Set Player Fatigue to 100
             recoup(true, 2);
             gameTime = 1800;
-            gameLog("\n\n-- 3rd QUARTER --", true);
+            gameLog("\n\n-- 3rd QUARTER --\n\n", true);
             gamePoss = false;
             kickOff(awayTeam, homeTeam);
 
@@ -2361,7 +2361,7 @@ public class Game implements Serializable {
             //Set Player Fatigue +50
             recoup(true, 3);
             gameTime = 900;
-            gameLog("\n\n-- 4th QUARTER --", true);
+            gameLog("\n\n-- 4th QUARTER --\n\n", true);
         }
 
     }
