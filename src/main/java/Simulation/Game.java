@@ -604,6 +604,36 @@ public class Game implements Serializable {
         
         playInfo = getEventLog();
 
+        if (offense.teamSelectedPlay != null) {
+            OffensivePlay offensePlay = (OffensivePlay) offense.teamSelectedPlay;
+            switch (offensePlay.offPlayType) {
+                case RUN:
+                    setupRushingPlay(offense, defense);
+                    break;
+                case PASS:
+                    setupPassingPlay(offense, defense);
+                    break;
+                case KICK:
+                    fieldGoalAtt(offense, defense);
+                    break;
+                case PUNT:
+                    puntPlay(offense, defense);
+                    break;
+                default:
+                    Log.i("Game.java", "Invalid offense play type, defaulting to auto play select");
+                    autoChoosePlay(offense, defense);
+            }
+
+        } else {
+            autoChoosePlay(offense, defense);
+        }
+
+        gameYardLinePlay = gameYardLine;
+
+    }
+
+    private void autoChoosePlay(Team offense, Team defense) {
+        // computer bullshit
         double preferPass = (offense.getPassProf() - defense.getPassDef()) / 100 + Math.random() * offense.teamStratOff.getPassPref();       //STRATEGIES
         double preferRush = (offense.getRushProf() - defense.getRushDef()) / 90 + Math.random() * offense.teamStratOff.getRunPref();
 
@@ -657,10 +687,6 @@ public class Game implements Serializable {
             //run play
             setupRushingPlay(offense, defense);
         }
-
-
-        gameYardLinePlay = gameYardLine;
-
     }
 
     private void setupPassingPlay(Team offense, Team defense) {
