@@ -1538,7 +1538,7 @@ public class MainActivity extends AppCompatActivity {
                     dialog.dismiss();
                     return;
                 }
-                
+
                 g.runPlay();
 
                 gametimeText.setText(g.convGameTime());
@@ -3432,7 +3432,7 @@ public class MainActivity extends AppCompatActivity {
                             AdapterView<?> parent, View view, int position, long id) {
                         playDescription.setText("Play description goes here");
                         Play play = plays.get(position);
-                        playDescription.setText(play.description);
+                        playDescription.setText(play.getFullDescription());
                         userTeam.teamSelectedPlay = play;
                         playNameText.setText(play.name);
                     }

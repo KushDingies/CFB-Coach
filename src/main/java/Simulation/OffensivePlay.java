@@ -10,4 +10,5 @@ public class OffensivePlay extends Play {
     public enum type { RUN, PASS, PUNT, KICK }
 
     public type offPlayType;
+
 }

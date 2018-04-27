@@ -275,6 +275,8 @@ public class Team {
         teamStratDef = getTeamStrategiesDef()[teamStratDefNum];
 
         hallOfFame.add("");
+
+        teamSelectedPlay = Play.getAutoPlay();
     }
 
     /**
@@ -368,6 +370,8 @@ public class Team {
 
         // Group players by class standing (FRs, SOs, etc)
         groupPlayerStandingCSV();
+
+        teamSelectedPlay = Play.getAutoPlay();
 
     }
 
