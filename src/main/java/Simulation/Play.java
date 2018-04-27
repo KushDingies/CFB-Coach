@@ -19,24 +19,60 @@ public class Play {
     public String getFullDescription() {
         String fullDesc = "";
         fullDesc += description;
-        if (runBlocking != 0)
-            fullDesc += "\n" + runBlocking + " run blocking";
-        if (runStopping != 0)
-            fullDesc += "\n" + runStopping + " run stopping";
-        if (runPotential != 0)
-            fullDesc += "\n" + runPotential + " run potential";
-        if (passBlocking != 0)
-            fullDesc += "\n" + passBlocking + " pass blocking";
-        if (passRush != 0)
-            fullDesc += "\n" + passRush + " pass rush";
-        if (passPotential != 0)
-            fullDesc += "\n" + passPotential + " pass potential";
-        if (catchMod != 0)
-            fullDesc += "\n" + catchMod + " catch modifier";
-        if (intMod != 0)
-            fullDesc += "\n" + intMod + " interception modifier";
-        if (sackMod != 0)
-            fullDesc += "\n" + sackMod + " sack modifier";
+        if (runBlocking != 0) {
+            fullDesc += "\n";
+            if (runBlocking > 0)
+                    fullDesc += "+";
+            fullDesc += runBlocking + " run blocking";
+        }
+        if (runStopping != 0) {
+            fullDesc += "\n";
+            if (runStopping > 0)
+                fullDesc += "+";
+            fullDesc += runStopping + " run stopping";
+        }
+        if (runPotential != 0) {
+            fullDesc += "\n";
+            if (runPotential > 0)
+                fullDesc += "+";
+            fullDesc += runPotential + " run potential";
+        }
+        if (passBlocking != 0) {
+            fullDesc += "\n";
+            if (passBlocking > 0)
+                fullDesc += "+";
+            fullDesc += passBlocking + " pass blocking";
+        }
+        if (passRush != 0) {
+            fullDesc += "\n";
+            if (passRush > 0)
+                fullDesc += "+";
+            fullDesc += passRush + " pass rush";
+        }
+        if (passPotential != 0) {
+            fullDesc += "\n";
+            if (passPotential > 0)
+                fullDesc += "+";
+            fullDesc += passPotential + " pass potential";
+        }
+        if (catchMod != 0) {
+            fullDesc += "\n";
+            if (catchMod > 0)
+                fullDesc += "+";
+            fullDesc += catchMod + " catch modifier";
+        }
+        if (intMod != 0) {
+            fullDesc += "\n";
+            if (intMod > 0)
+                fullDesc += "+";
+            fullDesc += intMod + " interception modifier";
+        }
+        if (sackMod != 0) {
+            fullDesc += "\n";
+            if (sackMod > 0)
+                fullDesc += "+";
+            fullDesc += sackMod + " sack modifier";
+        }
 
 
         return fullDesc;
@@ -99,6 +135,15 @@ public class Play {
         expectPass.catchMod = -1;
         expectPass.intMod = 1;
         plays.add(expectPass);
+
+        DefensivePlay blitz = new DefensivePlay("Blitz", "Send extra defenders forward. Higher chance of creating big plays on either side.", DefensivePlay.expect.BALANCED);
+        blitz.runStopping = 3;
+        blitz.passRush = 3;
+        blitz.runPotential = 3;
+        blitz.passPotential = 5;
+        blitz.sackMod = 2;
+        blitz.intMod = 1;
+        plays.add(blitz);
 
         return plays;
     }
