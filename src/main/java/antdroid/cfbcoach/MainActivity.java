@@ -326,23 +326,23 @@ public class MainActivity extends AppCompatActivity {
                         }
                         simGameButton.setTextSize(12);
                         simGameButton.setText("Off-Season: Contracts");
-                        simLeague.advanceWeek();
+                        simLeague.onWeekFinished();
                     } else if (simLeague.getCurrentWeek() == 17 && userTeam.fired) {
                         jobOffers(userHC);
                         simGameButton.setTextSize(12);
                         simGameButton.setText("Off-Season: Coaching Changes");
-                        simLeague.advanceWeek();
+                        simLeague.onWeekFinished();
                         showNewsStoriesDialog();
                     } else if (simLeague.getCurrentWeek() == 17 && !userTeam.fired) {
                         promotions(userHC);
                         simGameButton.setTextSize(12);
                         simGameButton.setText("Off-Season: Coaching Changes");
-                        simLeague.advanceWeek();
+                        simLeague.onWeekFinished();
                     } else if (simLeague.getCurrentWeek() == 18) {
                         simLeague.coachCarousel();
                         simGameButton.setTextSize(12);
                         simGameButton.setText("Off-Season: Graduation");
-                        simLeague.advanceWeek();
+                        simLeague.onWeekFinished();
                         showNewsStoriesDialog();
                     } else if (simLeague.getCurrentWeek() == 19) {
                         userTeam.resetStats();
@@ -368,13 +368,13 @@ public class MainActivity extends AppCompatActivity {
                         updateTeamStats();
                         simGameButton.setTextSize(12);
                         simGameButton.setText("Off-Season: Transfer Players");
-                        simLeague.advanceWeek();
+                        simLeague.onWeekFinished();
                     } else if (simLeague.getCurrentWeek() == 20) {
                         simLeague.transferPlayers();
                         showNewsStoriesDialog();
                         simGameButton.setTextSize(12);
                         simGameButton.setText("Off-Season: Transfer Players II");
-                        simLeague.advanceWeek();
+                        simLeague.onWeekFinished();
                     } else if (simLeague.getCurrentWeek() == 21) {
                         //showNewsStoriesDialog();
 
@@ -406,7 +406,7 @@ public class MainActivity extends AppCompatActivity {
 
                         simGameButton.setTextSize(12);
                         simGameButton.setText("Begin Recruiting");
-                        simLeague.advanceWeek();
+                        simLeague.onWeekFinished();
                     } else if (simLeague.getCurrentWeek() >= 22) {
                         recruitingStage = 0;
                         simLeague.curePlayers(); // get rid of all injuries
@@ -553,7 +553,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void onUserGameFinished() {
 
-        simLeague.advanceWeek();
+        simLeague.onWeekFinished();
 
         // Get injury report if there are injuries and just played a game
         if (simLeague.getCurrentWeek() != 15 && showInjuryReport)
@@ -581,7 +581,7 @@ public class MainActivity extends AppCompatActivity {
             textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
             simGameButton.setTextSize(12);
             simGameButton.setText("Begin Off-Season");
-            simLeague.advanceWeek();
+            simLeague.onWeekFinished();
         } else {
             // Played a game, show summary
             if (showToasts)

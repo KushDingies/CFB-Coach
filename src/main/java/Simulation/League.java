@@ -122,7 +122,7 @@ public class League {
 
     //Current week, 1-14
     private int currentWeek;
-    public void advanceWeek() {
+    private void advanceWeek() {
         currentWeek++;
         for (int i = 0; i < conferences.size(); ++i) {
             conferences.get(i).week++;
@@ -1172,6 +1172,9 @@ public class League {
                 );
             }
         }
+    }
+
+    public void onWeekFinished() {
         //add news regarding CFB Playoff Committee
         cfbPlayoffsNews();
 
@@ -1187,8 +1190,7 @@ public class League {
         setTeamRanks();
         updateLongestActiveWinStreak();
 
-        // don't do this here automatically anymore - this should only happen once the user plays his game
-        //currentWeek++;
+        advanceWeek();
     }
 
 
