@@ -1504,6 +1504,7 @@ public class MainActivity extends AppCompatActivity {
         final TextView gametimeText = dialog.findViewById(R.id.ingameDialogGametimeText);
         final TextView playStatusText = dialog.findViewById(R.id.ingameDialogPlayStatus);
         final TextView prevPlayText = dialog.findViewById(R.id.ingameDialogPreviousPlay);
+        final TextView playResultText = dialog.findViewById(R.id.ingameDialogPlayResult);
 
         final TextView selectedPlayText = dialog.findViewById(R.id.ingameDialogSelectedPlay);
         if (userTeam.teamSelectedPlay != null) {
@@ -1525,6 +1526,7 @@ public class MainActivity extends AppCompatActivity {
         homeTeamScoreText.setText(Integer.toString(g.homeScore));
         playStatusText.setText(g.playInfo);
         prevPlayText.setText(g.lastPlayLog);
+        playResultText.setText("\nIt is now " + g.getEventLog().replace("\n", ""));
 
         final Button runPlayButton = dialog.findViewById(R.id.buttonRunNextPlay);
         runPlayButton.setOnClickListener(new View.OnClickListener() {
@@ -1559,6 +1561,7 @@ public class MainActivity extends AppCompatActivity {
 
                 playStatusText.setText(g.playInfo);
                 prevPlayText.setText(g.lastPlayLog);
+                playResultText.setText("\nIt is now " + g.getEventLog().replace("\n", ""));
                 selectedPlayText.setText("No play selected");
             }
         });

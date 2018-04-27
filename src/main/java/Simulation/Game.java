@@ -659,6 +659,7 @@ public class Game implements Serializable {
         }
 
 
+        gameYardLinePlay = gameYardLine;
 
     }
 
@@ -1280,6 +1281,8 @@ public class Game implements Serializable {
             return;
         }
 
+        gameYardLinePlay = gameYardLine;
+
         gameTime -= timePerPlay + timePerPlay * Math.random();
 
     }
@@ -1595,6 +1598,7 @@ public class Game implements Serializable {
                 }
             }
 
+            gameYardLinePlay = gameYardLine;
             gameTime -= timePerPlay * Math.random();
         }
     }
