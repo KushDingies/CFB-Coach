@@ -2,7 +2,7 @@
 
 **College Football Coach: Playcalling Edition**
 
-This is an expansion of Antdroidx's expansion of /u/jonesguy14's College Football Coach android game. My intention is to take the amazingly in depth base provided by them and add in a playcalling feature, to 
+This is an expansion of Antdroidx's expansion of /u/jonesguy14's College Football Coach android game. My intention is to take the amazingly in depth base provided by them and add in a playcalling feature, to increase in-game strategy and make playing games more exciting.
 
 Forked from https://github.com/antdroidx/CFB-Coach/
 All credit for all previous work goes to Antdroidx and /u/jonesguy14! This would not have been possible without the fantastic base that they provided to work on.
