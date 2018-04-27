@@ -1538,11 +1538,12 @@ public class MainActivity extends AppCompatActivity {
                     dialog.dismiss();
                     return;
                 }
+                
+                g.runPlay();
 
                 gametimeText.setText(g.convGameTime());
                 awayTeamScoreText.setText(Integer.toString(g.awayScore));
                 homeTeamScoreText.setText(Integer.toString(g.homeScore));
-                g.runPlay();
 
                 if (g.regulationIsOver()) {
                     if (g.playingOT) {
