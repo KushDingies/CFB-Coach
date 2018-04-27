@@ -70,7 +70,9 @@ public class MainActivity extends AppCompatActivity {
     private Conference currentConference;
     private Team currentTeam;
     private int currentConferenceID;
-    private Team userTeam;
+    private static Team userTeam;
+    public static Team getUserTeam() { return userTeam; }
+    public static Game userGame;
     private File saveLeagueFile;
     private String username;
     private Uri dataUri;
@@ -88,6 +90,7 @@ public class MainActivity extends AppCompatActivity {
     private ArrayAdapter<String> dataAdapterConf;
     private ListView mainList;
     private ExpandableListView expListPlayerStats;
+    private Button simGameButton;
 
     //recruiting
     private int recruitingStage;
@@ -295,9 +298,10 @@ public class MainActivity extends AppCompatActivity {
         /*
           Set up "Play Week" button
          */
-        final Button simGameButton = findViewById(R.id.simGameButton);
+        simGameButton = findViewById(R.id.simGameButton);
         simGameButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+                Log.i("Misha", "Play Week click");
                 if (recruitingStage == -1) {
                     // Perform action on click
                     if (simLeague.currentWeek == 16) {
@@ -405,87 +409,14 @@ public class MainActivity extends AppCompatActivity {
                         simLeague.curePlayers(); // get rid of all injuries
                         beginRecruiting();
                     } else {
-                        int numGamesPlayed = userTeam.gameWLSchedule.size();
+                        Log.i("Misha", "Play Week click b, before simLeague.playWeek()");
+
                         simLeague.playWeek();
 
-                        // Get injury report if there are injuries and just played a game
-                        if (simLeague.currentWeek != 15 && showInjuryReport && userTeam.gameWLSchedule.size() > numGamesPlayed)
-                            showInjuryReportDialog();
-
-                        if (simLeague.currentWeek == 15) {
-                            // Show NCG summary and check league records
-                            simLeague.checkLeagueRecords();
-                            simLeague.updateHCHistory();
-                            simLeague.updateTeamHistories();
-                            simLeague.updateLeagueHistory();
-                            simLeague.curePlayers(); // get rid of all injuries
-                            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                            builder.setMessage(simLeague.seasonSummaryStr())
-                                    .setTitle((seasonStart + userTeam.teamHistory.size()) + " Season Summary")
-                                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialog, int which) {
-                                        }
-                                    });
-                            builder.setCancelable(false);
-                            AlertDialog dialog = builder.create();
-                            dialog.show();
-                            TextView textView = dialog.findViewById(android.R.id.message);
-                            textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-                            simGameButton.setTextSize(12);
-                            simGameButton.setText("Begin Off-Season");
-                            simLeague.currentWeek++;
-                        } else if (userTeam.gameWLSchedule.size() > numGamesPlayed) {
-                            // Played a game, show summary
-                            if (showToasts)
-                                Toast.makeText(MainActivity.this, userTeam.weekSummaryStr(),
-                                        Toast.LENGTH_SHORT).show();
+                        if (userGame != null) {
+                            // bring up game dialog
+                            showIngameDialog(userGame);
                         }
-
-                        // Show notification for being invited/not invited to bowl or CCG
-                        if (simLeague.currentWeek >= 12) {
-                            if (!userTeam.gameSchedule.get(userTeam.gameSchedule.size() - 1).hasPlayed) {
-                                String weekGameName = userTeam.gameSchedule.get(userTeam.gameSchedule.size() - 1).gameName;
-                                if (weekGameName.equals("NCG")) {
-                                    if (showToasts)
-                                        Toast.makeText(MainActivity.this, "Congratulations! " + userTeam.name + " was invited to the National Championship Game!",
-                                                Toast.LENGTH_SHORT).show();
-                                } else {
-                                    if (showToasts)
-                                        Toast.makeText(MainActivity.this, "Congratulations! " + userTeam.name + " was invited to the " +
-                                                        weekGameName + "!",
-                                                Toast.LENGTH_SHORT).show();
-                                }
-                            } else if (simLeague.currentWeek == 12) {
-                                if (showToasts)
-                                    Toast.makeText(MainActivity.this, userTeam.name + " was not invited to the Conference Championship.",
-                                            Toast.LENGTH_SHORT).show();
-                            } else if (simLeague.currentWeek == 13) {
-                                if (showToasts)
-                                    Toast.makeText(MainActivity.this, userTeam.name + " was not invited to a bowl game.",
-                                            Toast.LENGTH_SHORT).show();
-                            }
-                        }
-
-                        if (simLeague.currentWeek < 12) {
-                            simGameButton.setTextSize(14);
-                            simGameButton.setText("Play Week " + (simLeague.currentWeek + 1));
-                        } else if (simLeague.currentWeek == 12) {
-                            simGameButton.setTextSize(11);
-                            simGameButton.setText("Play Conf Championships");
-                            examineTeam(currentTeam.name);
-                        } else if (simLeague.currentWeek == 13) {
-                            heismanCeremony();
-                            simGameButton.setTextSize(12);
-                            simGameButton.setText("Play Bowl Games");
-                            examineTeam(currentTeam.name);
-                        } else if (simLeague.currentWeek == 14) {
-                            simGameButton.setTextSize(10);
-                            simGameButton.setText("Play National Championship");
-                        }
-
-                        updateCurrTeam();
-                        scrollToLatestGame();
 
                     }
                 } else {
@@ -615,6 +546,89 @@ public class MainActivity extends AppCompatActivity {
             // Only show recruiting classes if it aint 2017
             showRecruitingClassDialog();
         }
+
+    }
+
+    private void onUserGameFinished() {
+
+        // Get injury report if there are injuries and just played a game
+        if (simLeague.currentWeek != 15 && showInjuryReport)
+            showInjuryReportDialog();
+
+        if (simLeague.currentWeek == 15) {
+            // Show NCG summary and check league records
+            simLeague.checkLeagueRecords();
+            simLeague.updateHCHistory();
+            simLeague.updateTeamHistories();
+            simLeague.updateLeagueHistory();
+            simLeague.curePlayers(); // get rid of all injuries
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+            builder.setMessage(simLeague.seasonSummaryStr())
+                    .setTitle((seasonStart + userTeam.teamHistory.size()) + " Season Summary")
+                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                        }
+                    });
+            builder.setCancelable(false);
+            AlertDialog dialog = builder.create();
+            dialog.show();
+            TextView textView = dialog.findViewById(android.R.id.message);
+            textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+            simGameButton.setTextSize(12);
+            simGameButton.setText("Begin Off-Season");
+            simLeague.currentWeek++;
+        } else {
+            // Played a game, show summary
+            if (showToasts)
+                Toast.makeText(MainActivity.this, userTeam.weekSummaryStr(),
+                        Toast.LENGTH_SHORT).show();
+        }
+
+        // Show notification for being invited/not invited to bowl or CCG
+        if (simLeague.currentWeek >= 12) {
+            if (!userTeam.gameSchedule.get(userTeam.gameSchedule.size() - 1).hasPlayed) {
+                String weekGameName = userTeam.gameSchedule.get(userTeam.gameSchedule.size() - 1).gameName;
+                if (weekGameName.equals("NCG")) {
+                    if (showToasts)
+                        Toast.makeText(MainActivity.this, "Congratulations! " + userTeam.name + " was invited to the National Championship Game!",
+                                Toast.LENGTH_SHORT).show();
+                } else {
+                    if (showToasts)
+                        Toast.makeText(MainActivity.this, "Congratulations! " + userTeam.name + " was invited to the " +
+                                        weekGameName + "!",
+                                Toast.LENGTH_SHORT).show();
+                }
+            } else if (simLeague.currentWeek == 12) {
+                if (showToasts)
+                    Toast.makeText(MainActivity.this, userTeam.name + " was not invited to the Conference Championship.",
+                            Toast.LENGTH_SHORT).show();
+            } else if (simLeague.currentWeek == 13) {
+                if (showToasts)
+                    Toast.makeText(MainActivity.this, userTeam.name + " was not invited to a bowl game.",
+                            Toast.LENGTH_SHORT).show();
+            }
+        }
+
+        if (simLeague.currentWeek < 12) {
+            simGameButton.setTextSize(14);
+            simGameButton.setText("Play Week " + (simLeague.currentWeek + 1));
+        } else if (simLeague.currentWeek == 12) {
+            simGameButton.setTextSize(11);
+            simGameButton.setText("Play Conf Championships");
+            examineTeam(currentTeam.name);
+        } else if (simLeague.currentWeek == 13) {
+            heismanCeremony();
+            simGameButton.setTextSize(12);
+            simGameButton.setText("Play Bowl Games");
+            examineTeam(currentTeam.name);
+        } else if (simLeague.currentWeek == 14) {
+            simGameButton.setTextSize(10);
+            simGameButton.setText("Play National Championship");
+        }
+
+        updateCurrTeam();
+        scrollToLatestGame();
 
     }
 
@@ -1466,6 +1480,57 @@ public class MainActivity extends AppCompatActivity {
                 textScoutDefenseStrategy.setVisibility(View.GONE);
             }
         }
+    }
+
+    private void showIngameDialog(final Game g) {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setTitle(g.awayTeam.abbr + " @ " + g.homeTeam.abbr + ": " + g.gameName)
+                .setView(getLayoutInflater().inflate(R.layout.ingame_dialog, null));
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        final TextView awayTeamScoreText = dialog.findViewById(R.id.ingameDialogScoreAway);
+        final TextView homeTeamScoreText = dialog.findViewById(R.id.ingameDialogScoreHome);
+        final TextView awayTeamText = dialog.findViewById(R.id.ingameDialogScoreAwayName);
+        awayTeamText.setText(g.awayTeam.abbr);
+        final TextView homeTeamText = dialog.findViewById(R.id.ingameDialogScoreHomeName);
+        homeTeamText.setText(g.homeTeam.abbr);
+        final TextView gametimeText = dialog.findViewById(R.id.ingameDialogGametimeText);
+        final TextView playStatusText = dialog.findViewById(R.id.ingameDialogPlayStatus);
+        final TextView prevPlayText = dialog.findViewById(R.id.ingameDialogPreviousPlay);
+
+        gametimeText.setText(g.convGameTime());
+        awayTeamScoreText.setText(Integer.toString(g.awayScore));
+        homeTeamScoreText.setText(Integer.toString(g.homeScore));
+        g.setupGame();
+        playStatusText.setText(g.playInfo);
+        prevPlayText.setText(g.lastPlayLog);
+
+        Button runPlayButton = dialog.findViewById(R.id.buttonRunNextPlay);
+        runPlayButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                gametimeText.setText(g.convGameTime());
+                awayTeamScoreText.setText(Integer.toString(g.awayScore));
+                homeTeamScoreText.setText(Integer.toString(g.homeScore));
+                g.runPlay();
+                playStatusText.setText(g.playInfo);
+                prevPlayText.setText(g.lastPlayLog);
+            }
+        });
+
+    }
+
+    private void showPlaySelectDialog() {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setTitle("Pick a play").setView(getLayoutInflater()
+                .inflate(R.layout.play_select_dialog, null));
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
     }
 
     private void showTeamRankingsDialog() {
@@ -3283,6 +3348,83 @@ public class MainActivity extends AppCompatActivity {
         simLeague.newsStories.get(0).remove(3);
         simLeague.newsStories.get(0).remove(3);
         simLeague.topRecruits();
+    }
+
+    /**
+     * Dialog for coaches to select their team's next play during a game.
+     */
+    private void showPlaySelectDialog(boolean playerIsOffense) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Play Selector")
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        //do nothing?
+                    }
+                })
+                .setView(getLayoutInflater().inflate(R.layout.play_select_dialog, null));
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        // Get the options for plays in both offense and defense
+        final TeamStrategy[] tsOff = userTeam.getTeamStrategiesOff();
+        final TeamStrategy[] tsDef = userTeam.getTeamStrategiesDef();
+        int offPlayTypeNum = 0;
+        int defPlayTypeNum = 0;
+
+        String[] playTypeSelectionOff = new String[4];
+        playTypeSelectionOff[0] = "Run";
+        playTypeSelectionOff[1] = "Pass";
+        playTypeSelectionOff[2] = "Punt";
+        playTypeSelectionOff[3] = "Place Kick";
+//        for (int i = 0; i < 2; ++i) {
+//            playOffSelection[i] = tsOff[i].getStratName();
+//            if (playOffSelection[i].equals(userTeam.teamStratOff.getStratName())) offStratNum = i;
+//        }
+
+        String[] playTypeSelectionDef = new String[3];
+        playTypeSelectionDef[0] = "Run";
+        playTypeSelectionDef[1] = "Pass";
+        playTypeSelectionDef[2] = "Balanced";
+//        for (int i = 0; i < tsDef.length; ++i) {
+//            stratDefSelection[i] = tsDef[i].getStratName();
+//            if (stratDefSelection[i].equals(userTeam.teamStratDef.getStratName())) defStratNum = i;
+//        }
+
+        final TextView playDescription = dialog.findViewById(R.id.textPlayDescription);
+        //final TextView defStratDescription = dialog.findViewById(R.id.textDefenseStrategy);
+
+        // Play Type Selection Spinner
+        Spinner playTypeSelectionSpinner = dialog.findViewById(R.id.spinnerPlayType);
+        ArrayAdapter<String> playTypeSpinnerAdapter;
+        if (playerIsOffense) {
+            playTypeSpinnerAdapter = new ArrayAdapter<String>(this,
+                    android.R.layout.simple_spinner_item, playTypeSelectionOff);
+        } else {
+            playTypeSpinnerAdapter = new ArrayAdapter<String>(this,
+                    android.R.layout.simple_spinner_item, playTypeSelectionDef);
+        }
+        playTypeSpinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        playTypeSelectionSpinner.setAdapter(playTypeSpinnerAdapter);
+        playTypeSelectionSpinner.setSelection(offPlayTypeNum);
+
+        playTypeSelectionSpinner.setOnItemSelectedListener(
+                new AdapterView.OnItemSelectedListener() {
+                    public void onItemSelected(
+                            AdapterView<?> parent, View view, int position, long id) {
+                        playDescription.setText("Play description goes here");
+                        //playDescription.setText(tsOff[position].getStratDescription());
+                        //userTeam.teamStratOff = tsOff[position];
+                        //userTeam.teamStratOffNum = position;
+                    }
+
+                    public void onNothingSelected(AdapterView<?> parent) {
+                        // do nothing
+                    }
+                });
+
+
+
     }
 
 }

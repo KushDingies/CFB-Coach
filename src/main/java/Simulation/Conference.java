@@ -23,6 +23,7 @@ import Positions.PlayerLB;
 import Positions.PlayerCB;
 import Positions.PlayerS;
 import Positions.PlayerK;
+import antdroid.cfbcoach.MainActivity;
 
 public class Conference {
 
@@ -245,7 +246,13 @@ public class Conference {
             playConfChamp();
         } else {
             for (int i = 0; i < confTeams.size(); ++i) {
-                confTeams.get(i).gameSchedule.get(week).playGame();
+                Game game = confTeams.get(i).gameSchedule.get(week);
+                if (game.containsTeam(MainActivity.getUserTeam())) {
+                    MainActivity.userGame = game;
+                }
+                else if (!game.hasPlayed) {
+                    game.playGame();
+                }
             }
             if (week == 11) schedConfChamp();
             week++;

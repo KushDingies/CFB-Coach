@@ -1,5 +1,7 @@
 package Simulation;
 
+import android.util.Log;
+
 import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -29,7 +31,12 @@ public class Game implements Serializable {
     public final Team homeTeam;
     public final Team awayTeam;
 
+    public boolean containsTeam(Team t) {
+        return t == homeTeam || t == awayTeam;
+    }
+
     public boolean hasPlayed;
+    public boolean isPlayerGame = false;
     private boolean QT1;
     private boolean QT2;
     private boolean QT3;
@@ -75,7 +82,8 @@ public class Game implements Serializable {
 
     private String gameEventLog;
     private String tdInfo;
-    private String playInfo;
+    public String playInfo;
+    public String lastPlayLog;
 
     //private variables used when simming games
     private int gameTime;
@@ -296,195 +304,271 @@ public class Game implements Serializable {
         return ST;
     }
 
+    public void setupGame() {
+
+        Log.i("setupGame", "setting up game: " + awayTeam.abbr + " @ " + homeTeam.abbr);
+        playInfo = "";
+        lastPlayLog = "";
+        gameEventLog = "";
+        gameLog(awayTeam.rankTeamPollScore + " " + awayTeam.abbr + " (" + awayTeam.wins + "-" + awayTeam.losses + ") @ #" +
+                homeTeam.rankTeamPollScore + " " + homeTeam.abbr + " (" + homeTeam.wins + "-" + homeTeam.losses + ")" + "\n" +
+                "---------------------------------------------------------\n\n" +
+                awayTeam.abbr + " Off Strategy: " + awayTeam.teamStratOff.getStratName() + "\n" +
+                awayTeam.abbr + " Def Strategy: " + awayTeam.teamStratDef.getStratName() + "\n" +
+                homeTeam.abbr + " Off Strategy: " + homeTeam.teamStratOff.getStratName() + "\n" +
+                homeTeam.abbr + " Def Strategy: " + homeTeam.teamStratDef.getStratName() + "\n" +
+                "\n\n-- 1st QUARTER --", true);
+        //probably establish some home field advantage before playing
+        gameTime = 3600;
+        gameDown = 1;
+        gamePoss = true;
+
+        //Reset Game Stats & Fatigue
+        for (int i = 0; i < homeTeam.getAllPlayers().size(); ++i) {
+            Player player = homeTeam.getAllPlayers().get(i);
+            player.gameFatigue = 100;
+            player.gameSim = 0;
+            player.posDepth = 0;
+            player.gamePassAtempts = 0;
+            player.gamePassComplete = 0;
+            player.gamePassYards = 0;
+            player.gamePassTDs = 0;
+            player.gamePassInts = 0;
+            player.gameRushAttempts = 0;
+            player.gameRushYards = 0;
+            player.gameRushTDs = 0;
+            player.gameTargets = 0;
+            player.gameReceptions = 0;
+            player.gameRecYards = 0;
+            player.gameRecTDs = 0;
+            player.gameDrops = 0;
+            player.gameFumbles = 0;
+            player.gameTackles = 0;
+            player.gameSacks = 0;
+            player.gameInterceptions = 0;
+            player.gameDefended = 0;
+            player.gameIncomplete = 0;
+            player.gameFGAttempts = 0;
+            player.gameFGMade = 0;
+            player.gameXPAttempts = 0;
+            player.gameXPMade = 0;
+        }
+        for (int i = 0; i < awayTeam.getAllPlayers().size(); ++i) {
+            Player player = awayTeam.getAllPlayers().get(i);
+            player.gameFatigue = 100;
+            player.gameSim = 0;
+            player.posDepth = 0;
+            player.gamePassAtempts = 0;
+            player.gamePassComplete = 0;
+            player.gamePassYards = 0;
+            player.gamePassTDs = 0;
+            player.gamePassInts = 0;
+            player.gameRushAttempts = 0;
+            player.gameRushYards = 0;
+            player.gameRushTDs = 0;
+            player.gameTargets = 0;
+            player.gameReceptions = 0;
+            player.gameRecYards = 0;
+            player.gameRecTDs = 0;
+            player.gameDrops = 0;
+            player.gameFumbles = 0;
+            player.gameTackles = 0;
+            player.gameSacks = 0;
+            player.gameInterceptions = 0;
+            player.gameDefended = 0;
+            player.gameIncomplete = 0;
+            player.gameFGAttempts = 0;
+            player.gameFGMade = 0;
+            player.gameXPAttempts = 0;
+            player.gameXPMade = 0;
+        }
+
+        getReturner();
+
+        kickOff(homeTeam, awayTeam);
+    }
+
+    private void gameLog(String playInfo, String playSummary, boolean alwaysLog) {
+        //Log.i("Game.java gameLog", playInfo + "|" + playSummary);
+        if (alwaysLog || homeTeam.league.fullGameLog)
+            gameEventLog += playInfo + playSummary;
+        lastPlayLog += playSummary;
+    }
+
+    private void gameLog(String playInfo, String playSummary) {
+        gameLog(playInfo, playSummary, false);
+    }
+
+    private void gameLog(String playSummary, boolean alwaysLog) {
+        gameLog("", playSummary, alwaysLog);
+    }
+
+    private void gameLog(String playSummary) {
+        gameLog("", playSummary);
+    }
+
+    public void afterPlay() {
+
+        // Check for turnover on downs
+        if (gameDown > 4) {
+
+            Team offense;
+            Team defense;
+            if (gamePoss) {
+                offense = homeTeam;
+                defense = awayTeam;
+            } else {
+                offense = awayTeam;
+                defense = homeTeam;
+            }
+
+            if (!playingOT) {
+                //Log the turnover on downs, reset down and distance, give possession to the defense, exit this runPlay()
+                gameLog(playInfo, "TURNOVER ON DOWNS!\n" + offense.abbr + " failed to convert on " + (gameDown - 1) + "th down. " + defense.abbr + " takes over possession on downs.", true);
+
+                //Turn over on downs, change possession, set to first down and 10 yards to go
+                gamePoss = !gamePoss;
+                gameDown = 1;
+                gameYardsNeed = 10;
+                //and flip which direction the ball is moving in
+                gameYardLine = 100 - gameYardLine;
+
+            } else {
+                //OT is over for the offense, log the turnover on downs, run resetForOT().
+                gameLog(playInfo, "TURNOVER ON DOWNS!\n" + offense.abbr + " failed to convert on " + (gameDown - 1) + "th down in OT and their possession is over.", true);
+                resetForOT();
+
+            }
+        }
+
+    }
+
     public void playGame() {
         if (!hasPlayed) {
-            gameEventLog = "LOG: #" + awayTeam.rankTeamPollScore + " " + awayTeam.abbr + " (" + awayTeam.wins + "-" + awayTeam.losses + ") @ #" +
-                    homeTeam.rankTeamPollScore + " " + homeTeam.abbr + " (" + homeTeam.wins + "-" + homeTeam.losses + ")" + "\n" +
-                    "---------------------------------------------------------\n\n" +
-                    awayTeam.abbr + " Off Strategy: " + awayTeam.teamStratOff.getStratName() + "\n" +
-                    awayTeam.abbr + " Def Strategy: " + awayTeam.teamStratDef.getStratName() + "\n" +
-                    homeTeam.abbr + " Off Strategy: " + homeTeam.teamStratOff.getStratName() + "\n" +
-                    homeTeam.abbr + " Def Strategy: " + homeTeam.teamStratDef.getStratName() + "\n" +
-                    "\n\n-- 1st QUARTER --";
-            //probably establish some home field advantage before playing
-            gameTime = 3600;
-            gameDown = 1;
-            gamePoss = true;
 
-            //Reset Game Stats & Fatigue
-            for (int i = 0; i < homeTeam.getAllPlayers().size(); ++i) {
-                Player player = homeTeam.getAllPlayers().get(i);
-                player.gameFatigue = 100;
-                player.gameSim = 0;
-                player.posDepth = 0;
-                player.gamePassAtempts = 0;
-                player.gamePassComplete = 0;
-                player.gamePassYards = 0;
-                player.gamePassTDs = 0;
-                player.gamePassInts = 0;
-                player.gameRushAttempts = 0;
-                player.gameRushYards = 0;
-                player.gameRushTDs = 0;
-                player.gameTargets = 0;
-                player.gameReceptions = 0;
-                player.gameRecYards = 0;
-                player.gameRecTDs = 0;
-                player.gameDrops = 0;
-                player.gameFumbles = 0;
-                player.gameTackles = 0;
-                player.gameSacks = 0;
-                player.gameInterceptions = 0;
-                player.gameDefended = 0;
-                player.gameIncomplete = 0;
-                player.gameFGAttempts = 0;
-                player.gameFGMade = 0;
-                player.gameXPAttempts = 0;
-                player.gameXPMade = 0;
-            }
-            for (int i = 0; i < awayTeam.getAllPlayers().size(); ++i) {
-                Player player = awayTeam.getAllPlayers().get(i);
-                player.gameFatigue = 100;
-                player.gameSim = 0;
-                player.posDepth = 0;
-                player.gamePassAtempts = 0;
-                player.gamePassComplete = 0;
-                player.gamePassYards = 0;
-                player.gamePassTDs = 0;
-                player.gamePassInts = 0;
-                player.gameRushAttempts = 0;
-                player.gameRushYards = 0;
-                player.gameRushTDs = 0;
-                player.gameTargets = 0;
-                player.gameReceptions = 0;
-                player.gameRecYards = 0;
-                player.gameRecTDs = 0;
-                player.gameDrops = 0;
-                player.gameFumbles = 0;
-                player.gameTackles = 0;
-                player.gameSacks = 0;
-                player.gameInterceptions = 0;
-                player.gameDefended = 0;
-                player.gameIncomplete = 0;
-                player.gameFGAttempts = 0;
-                player.gameFGMade = 0;
-                player.gameXPAttempts = 0;
-                player.gameXPMade = 0;
-            }
-
-            getReturner();
-
-            kickOff(homeTeam, awayTeam);
+            setupGame();
 
             // Regulation
             while (gameTime > 0) {
                 //play ball!
-                if (gamePoss) runPlay(homeTeam, awayTeam);
-                else runPlay(awayTeam, homeTeam);
+                runPlay();
             }
 
-            // Add last play
-            if (homeScore != awayScore) {
-                gameEventLog += getEventLogScore() + "\nTime has expired! The game is over.";
-            } else {
-                gameEventLog += getEventLogScore() + "\nOVERTIME!\nTie game at 0:00, overtime begins!";
-            }
-
-            //Overtime (if needed)
-            if (gameTime <= 0 && homeScore == awayScore) {
-                playingOT = true;
-                gamePoss = false;
-                gameYardLine = 75;
-                numOT++;
-                gameTime = -1;
-                gameDown = 1;
-                gameYardsNeed = 10;
-
-                while (playingOT) {
-                    if (gamePoss) runPlay(homeTeam, awayTeam);
-                    else runPlay(awayTeam, homeTeam);
-                }
-            }
-
-            //game over, add wins
-            if (homeScore > awayScore) {
-                homeTeam.wins++;
-                homeTeam.totalWins++;
-                homeTeam.gameWLSchedule.add("W");
-                awayTeam.losses++;
-                awayTeam.totalLosses++;
-                awayTeam.gameWLSchedule.add("L");
-                homeTeam.gameWinsAgainst.add(awayTeam);
-                awayTeam.gameLossesAgainst.add(homeTeam);
-                homeTeam.winStreak.addWin(homeTeam.league.getYear());
-                homeTeam.league.checkLongestWinStreak(homeTeam.winStreak);
-                awayTeam.winStreak.resetStreak(awayTeam.league.getYear());
-                homeTeam.HC.get(0).wins++;
-                awayTeam.HC.get(0).losses++;
-            } else {
-                homeTeam.losses++;
-                homeTeam.totalLosses++;
-                homeTeam.gameWLSchedule.add("L");
-                awayTeam.wins++;
-                awayTeam.totalWins++;
-                awayTeam.gameWLSchedule.add("W");
-                awayTeam.gameWinsAgainst.add(homeTeam);
-                homeTeam.gameLossesAgainst.add(awayTeam);
-                awayTeam.winStreak.addWin(awayTeam.league.getYear());
-                awayTeam.league.checkLongestWinStreak(awayTeam.winStreak);
-                homeTeam.winStreak.resetStreak(homeTeam.league.getYear());
-                homeTeam.HC.get(0).losses++;
-                awayTeam.HC.get(0).wins++;
-            }
-
-            // Add points/opp points
-            homeTeam.addGamePlayedPlayers(homeScore > awayScore);
-            awayTeam.addGamePlayedPlayers(awayScore > homeScore);
-
-            homeTeam.teamPoints += homeScore;
-            awayTeam.teamPoints += awayScore;
-
-            homeTeam.teamOppPoints += awayScore;
-            awayTeam.teamOppPoints += homeScore;
-
-            homeYards = getPassYards(false) + getRushYards(false);
-            awayYards = getPassYards(true) + getRushYards(true);
-
-            homeTeam.teamYards += homeYards;
-            awayTeam.teamYards += awayYards;
-
-            homeTeam.teamOppYards += awayYards;
-            awayTeam.teamOppYards += homeYards;
-
-            homeTeam.teamOppPassYards += getPassYards(true);
-            awayTeam.teamOppPassYards += getPassYards(false);
-            homeTeam.teamOppRushYards += getRushYards(true);
-            awayTeam.teamOppRushYards += getRushYards(false);
-            homePassYards = getPassYards(false);
-            awayPassYards = getPassYards(true);
-            homeRushYards = getRushYards(false);
-            awayRushYards = getRushYards(true);
-
-            homeTeam.teamTODiff += awayTOs - homeTOs;
-            awayTeam.teamTODiff += homeTOs - awayTOs;
-
-            gameStatistics();
-
-            hasPlayed = true;
-
-            addNewsStory();
-
-            if (homeTeam.rivalTeam.equals(awayTeam.abbr) || awayTeam.rivalTeam.equals(homeTeam.abbr)) {
-                if (homeScore > awayScore) {
-                    homeTeam.wonRivalryGame = true;
-                } else {
-                    awayTeam.wonRivalryGame = true;
-                }
-            }
-
-            homeTeam.checkForInjury();
-            awayTeam.checkForInjury();
+            atClockZero();
 
         }
+    }
+
+    private void atClockZero() {
+
+        // Add last play
+        if (homeScore != awayScore) {
+            gameLog(getEventLogScore(), "\nTime has expired! The game is over.", true);
+        } else {
+            gameLog(getEventLogScore(), "\nOVERTIME!\nTie game at 0:00, overtime begins!", true);
+        }
+
+        //Overtime (if needed)
+        if (gameTime <= 0 && homeScore == awayScore) {
+            playingOT = true;
+            gamePoss = false;
+            gameYardLine = 75;
+            numOT++;
+            gameTime = -1;
+            gameDown = 1;
+            gameYardsNeed = 10;
+
+            while (playingOT) {
+                runPlay();
+            }
+        }
+
+        //game over, add wins
+        if (homeScore > awayScore) {
+            homeTeam.wins++;
+            homeTeam.totalWins++;
+            homeTeam.gameWLSchedule.add("W");
+            awayTeam.losses++;
+            awayTeam.totalLosses++;
+            awayTeam.gameWLSchedule.add("L");
+            homeTeam.gameWinsAgainst.add(awayTeam);
+            awayTeam.gameLossesAgainst.add(homeTeam);
+            homeTeam.winStreak.addWin(homeTeam.league.getYear());
+            homeTeam.league.checkLongestWinStreak(homeTeam.winStreak);
+            awayTeam.winStreak.resetStreak(awayTeam.league.getYear());
+            homeTeam.HC.get(0).wins++;
+            awayTeam.HC.get(0).losses++;
+        } else {
+            homeTeam.losses++;
+            homeTeam.totalLosses++;
+            homeTeam.gameWLSchedule.add("L");
+            awayTeam.wins++;
+            awayTeam.totalWins++;
+            awayTeam.gameWLSchedule.add("W");
+            awayTeam.gameWinsAgainst.add(homeTeam);
+            homeTeam.gameLossesAgainst.add(awayTeam);
+            awayTeam.winStreak.addWin(awayTeam.league.getYear());
+            awayTeam.league.checkLongestWinStreak(awayTeam.winStreak);
+            homeTeam.winStreak.resetStreak(homeTeam.league.getYear());
+            homeTeam.HC.get(0).losses++;
+            awayTeam.HC.get(0).wins++;
+        }
+
+        // Add points/opp points
+        homeTeam.addGamePlayedPlayers(homeScore > awayScore);
+        awayTeam.addGamePlayedPlayers(awayScore > homeScore);
+
+        homeTeam.teamPoints += homeScore;
+        awayTeam.teamPoints += awayScore;
+
+        homeTeam.teamOppPoints += awayScore;
+        awayTeam.teamOppPoints += homeScore;
+
+        homeYards = getPassYards(false) + getRushYards(false);
+        awayYards = getPassYards(true) + getRushYards(true);
+
+        homeTeam.teamYards += homeYards;
+        awayTeam.teamYards += awayYards;
+
+        homeTeam.teamOppYards += awayYards;
+        awayTeam.teamOppYards += homeYards;
+
+        homeTeam.teamOppPassYards += getPassYards(true);
+        awayTeam.teamOppPassYards += getPassYards(false);
+        homeTeam.teamOppRushYards += getRushYards(true);
+        awayTeam.teamOppRushYards += getRushYards(false);
+        homePassYards = getPassYards(false);
+        awayPassYards = getPassYards(true);
+        homeRushYards = getRushYards(false);
+        awayRushYards = getRushYards(true);
+
+        homeTeam.teamTODiff += awayTOs - homeTOs;
+        awayTeam.teamTODiff += homeTOs - awayTOs;
+
+        gameStatistics();
+
+        hasPlayed = true;
+
+        addNewsStory();
+
+        if (homeTeam.rivalTeam.equals(awayTeam.abbr) || awayTeam.rivalTeam.equals(homeTeam.abbr)) {
+            if (homeScore > awayScore) {
+                homeTeam.wonRivalryGame = true;
+            } else {
+                awayTeam.wonRivalryGame = true;
+            }
+        }
+
+        homeTeam.checkForInjury();
+        awayTeam.checkForInjury();
+    }
+
+    public void runPlay() {
+        lastPlayLog = "";
+        if (gamePoss) runPlay(homeTeam, awayTeam);
+        else runPlay(awayTeam, homeTeam);
+
+        afterPlay();
     }
 
     // PRE-SNAP DECISIONS
@@ -497,79 +581,60 @@ public class Game implements Serializable {
         
         playInfo = getEventLog();
 
-        if (gameDown > 4) {
-            if (!playingOT) {
-                //Log the turnover on downs, reset down and distance, give possession to the defense, exit this runPlay()
-                gameEventLog += playInfo + "TURNOVER ON DOWNS!\n" + offense.abbr + " failed to convert on " + (gameDown - 1) + "th down. " + defense.abbr + " takes over possession on downs.";
+        double preferPass = (offense.getPassProf() - defense.getPassDef()) / 100 + Math.random() * offense.teamStratOff.getPassPref();       //STRATEGIES
+        double preferRush = (offense.getRushProf() - defense.getRushDef()) / 90 + Math.random() * offense.teamStratOff.getRunPref();
 
-                //Turn over on downs, change possession, set to first down and 10 yards to go
-                gamePoss = !gamePoss;
-                gameDown = 1;
-                gameYardsNeed = 10;
-                //and flip which direction the ball is moving in
-                gameYardLine = 100 - gameYardLine;
+        // If it's 1st and Goal to go, adjust yards needed to reflect distance for a TD so that play selection reflects actual yards to go
+        // If we don't do this, gameYardsNeed may be higher than the actually distance for a TD and suboptimal plays may be chosen
+        if (gameDown == 1 && gameYardLine >= 91) gameYardsNeed = 100 - gameYardLine;
 
+        //Under 30 seconds to play, check that the team with the ball is trailing or tied, do something based on the score difference
+        if (gameTime <= 30 && !playingOT && ((gamePoss && (awayScore >= homeScore)) || (!gamePoss && (homeScore >= awayScore)))) {
+            //Down by 3 or less, or tied, and you have the ball
+            if (((gamePoss && (awayScore - homeScore) <= 3) || (!gamePoss && (homeScore - awayScore) <= 3)) && gameYardLine > 60) {
+                //last second FGA
+                fieldGoalAtt(offense, defense);
             } else {
-                //OT is over for the offense, log the turnover on downs, run resetForOT().
-                gameEventLog += playInfo + "TURNOVER ON DOWNS!\n" + offense.abbr + " failed to convert on " + (gameDown - 1) + "th down in OT and their possession is over.";
-                resetForOT();
-
+                //hail mary
+                setupPassingPlay(offense, defense);
             }
-        } else {
-            double preferPass = (offense.getPassProf() - defense.getPassDef()) / 100 + Math.random() * offense.teamStratOff.getPassPref();       //STRATEGIES
-            double preferRush = (offense.getRushProf() - defense.getRushDef()) / 90 + Math.random() * offense.teamStratOff.getRunPref();
-
-            // If it's 1st and Goal to go, adjust yards needed to reflect distance for a TD so that play selection reflects actual yards to go
-            // If we don't do this, gameYardsNeed may be higher than the actually distance for a TD and suboptimal plays may be chosen
-            if (gameDown == 1 && gameYardLine >= 91) gameYardsNeed = 100 - gameYardLine;
-
-            //Under 30 seconds to play, check that the team with the ball is trailing or tied, do something based on the score difference
-            if (gameTime <= 30 && !playingOT && ((gamePoss && (awayScore >= homeScore)) || (!gamePoss && (homeScore >= awayScore)))) {
-                //Down by 3 or less, or tied, and you have the ball
-                if (((gamePoss && (awayScore - homeScore) <= 3) || (!gamePoss && (homeScore - awayScore) <= 3)) && gameYardLine > 60) {
-                    //last second FGA
-                    fieldGoalAtt(offense, defense);
+        } else if (gameDown >= 4) {
+            if (((gamePoss && (awayScore - homeScore) > 3) || (!gamePoss && (homeScore - awayScore) > 3)) && gameTime < 300) {
+                //go for it since we need 7 to win -- This also forces going for it if down by a TD in BOT OT
+                if (gameYardsNeed < 3 && preferRush * 3 > preferPass) {
+                    setupRushingPlay(offense, defense);
                 } else {
-                    //hail mary
                     setupPassingPlay(offense, defense);
                 }
-            } else if (gameDown >= 4) {
-                if (((gamePoss && (awayScore - homeScore) > 3) || (!gamePoss && (homeScore - awayScore) > 3)) && gameTime < 300) {
-                    //go for it since we need 7 to win -- This also forces going for it if down by a TD in BOT OT
-                    if (gameYardsNeed < 3 && preferRush * 3 > preferPass) {
-                        setupRushingPlay(offense, defense);
-                    } else {
-                        setupPassingPlay(offense, defense);
-                    }
-                } else {
-                    //4th down
-                    if (gameYardsNeed < 3) {
-                        if (gameYardLine > 65) {
-                            //fga
-                            fieldGoalAtt(offense, defense);
-                        } else if (gameYardLine > 55) {
-                            // run play, go for it!
-                            setupRushingPlay(offense, defense);
-                        } else {
-                            //punt
-                            puntPlay(offense, defense);
-                        }
-                    } else if (gameYardLine > 60) {
+            } else {
+                //4th down
+                if (gameYardsNeed < 3) {
+                    if (gameYardLine > 65) {
                         //fga
                         fieldGoalAtt(offense, defense);
+                    } else if (gameYardLine > 55) {
+                        // run play, go for it!
+                        setupRushingPlay(offense, defense);
                     } else {
                         //punt
                         puntPlay(offense, defense);
                     }
+                } else if (gameYardLine > 60) {
+                    //fga
+                    fieldGoalAtt(offense, defense);
+                } else {
+                    //punt
+                    puntPlay(offense, defense);
                 }
-            } else if ((gameDown == 3 && gameYardsNeed > 4) || ((gameDown == 1 || gameDown == 2) && (preferPass >= preferRush))) {
-                // pass play
-                setupPassingPlay(offense, defense);
-            } else {
-                //run play
-                setupRushingPlay(offense, defense);
             }
+        } else if ((gameDown == 3 && gameYardsNeed > 4) || ((gameDown == 1 || gameDown == 2) && (preferPass >= preferRush))) {
+            // pass play
+            setupPassingPlay(offense, defense);
+        } else {
+            //run play
+            setupRushingPlay(offense, defense);
         }
+
 
 
     }
@@ -991,7 +1056,7 @@ public class Game implements Serializable {
                 if (pos.equals("WR")) {
                     if (100 * Math.random() < (100 - selWR.ratCatch) / 3) {
                         //drop
-                        gameEventLog += playInfo + offense.abbr + " WR " + selWR.name + " dropped the catch.";
+                        gameLog(playInfo, offense.abbr + " WR " + selWR.name + " dropped the catch.");
 
                         gameDown++;
                         recordDrop(selRB, selTE, selWR, pos);
@@ -1004,7 +1069,7 @@ public class Game implements Serializable {
                 if (pos.equals("TE")) {
                     if (compValue * Math.random() < (100 - selTE.ratCatch) / 3) {
                         //drop
-                        gameEventLog += playInfo + offense.abbr + "TE " + selTE.name + " dropped the catch.";
+                        gameLog(playInfo, offense.abbr + "TE " + selTE.name + " dropped the catch.");
 
                         gameDown++;
                         recordDrop(selRB, selTE, selWR, pos);
@@ -1017,7 +1082,7 @@ public class Game implements Serializable {
                 if (pos.equals("RB")) {
                     if (compValue * Math.random() < (100 - selTE.ratCatch) / 3) {
                         //drop
-                        gameEventLog += playInfo + offense.abbr + " RB " + selRB.name + " dropped the catch.";
+                        gameLog(playInfo, offense.abbr + " RB " + selRB.name + " dropped the catch.");
 
                         gameDown++;
                         recordDrop(selRB, selTE, selWR, pos);
@@ -1030,7 +1095,7 @@ public class Game implements Serializable {
 
 
                 //no completion, advance downs
-                gameEventLog += playInfo + offense.abbr + " QB " + selQB.name + " threw an incomplete pass to the " + pos + ".";
+                gameLog(playInfo, offense.abbr + " QB " + selQB.name + " threw an incomplete pass to the " + pos + ".");
                 gameDown++;
                 //Incomplete pass stops the clock, so just run time for how long the play took, then move on
 
@@ -1108,11 +1173,11 @@ public class Game implements Serializable {
                     gameYardsNeed -= yardsGain;
 
                     if (pos.equals("WR")) {
-                        gameEventLog += playInfo + offense.abbr + " WR " + selWR.name + " caught the pass for a gain of " + yardsGain + " yards.";
+                        gameLog(playInfo, offense.abbr + " WR " + selWR.name + " caught the pass for a gain of " + yardsGain + " yards.");
                     } else if (pos.equals("RB")) {
-                        gameEventLog += playInfo + offense.abbr + " RB " + selRB.name + " caught the pass for a gain of " + yardsGain + " yards.";
+                        gameLog(playInfo, offense.abbr + " RB " + selRB.name + " caught the pass for a gain of " + yardsGain + " yards.");
                     } else if (pos.equals("TE")) {
-                        gameEventLog += playInfo + offense.abbr + " TE " + selTE.name + " caught the pass for a gain of " + yardsGain + " yards.";
+                        gameLog(playInfo, offense.abbr + " TE " + selTE.name + " caught the pass for a gain of " + yardsGain + " yards.");
                     }
 
 
@@ -1134,7 +1199,7 @@ public class Game implements Serializable {
                         // Only set new down and distance if there wasn't a TD
                         gameDown = 1;
                         gameYardsNeed = 10;
-                        gameEventLog += "\nFIRST DOWN!";
+                        gameLog("\nFIRST DOWN!");
 
                     } else gameDown++;
                 }
@@ -1254,7 +1319,7 @@ public class Game implements Serializable {
                 // Only set new down and distance if there wasn't a TD
                 gameDown = 1;
                 gameYardsNeed = 10;
-                gameEventLog += "\nFIRST DOWN!";
+                gameLog("\nFIRST DOWN!");
             } else gameDown++;
         }
 
@@ -1315,7 +1380,7 @@ public class Game implements Serializable {
                 } else {
                     awayScore += 3;
                 }
-                gameEventLog += getEventLogScoring() + offense.abbr + " K " + offense.getK(0).name + " made the " + (110 - gameYardLine) + " yard FG.";
+                gameLog(getEventLogScoring(), offense.abbr + " K " + offense.getK(0).name + " made the " + (110 - gameYardLine) + " yard FG.", true);
                 addPointsQuarter(3);
 
                 selK.statsFGMade++;
@@ -1328,7 +1393,7 @@ public class Game implements Serializable {
 
             } else {
                 //miss
-                gameEventLog += playInfo + offense.abbr + " K " + offense.getK(0).name + " missed the " + (110 - gameYardLine) + " yard FG.";
+                gameLog(playInfo, offense.abbr + " K " + offense.getK(0).name + " missed the " + (110 - gameYardLine) + " yard FG.", true);
                 selK.statsFGAtt++;
                 selK.gameFGAttempts++;
                 if (!playingOT) {
@@ -1349,7 +1414,7 @@ public class Game implements Serializable {
                 } else {
                     awayScore += 3;
                 }
-                gameEventLog += getEventLogScoring() + offense.abbr + " K " + offense.getK(0).name + " made the " + (110 - gameYardLine) + " yard FG.";
+                gameLog(getEventLogScoring(), offense.abbr + " K " + offense.getK(0).name + " made the " + (110 - gameYardLine) + " yard FG.", true);
                 addPointsQuarter(3);
                 selK.statsFGMade++;
                 selK.statsFGAtt++;
@@ -1361,7 +1426,7 @@ public class Game implements Serializable {
 
             } else {
                 //miss
-                gameEventLog += playInfo + offense.abbr + " K " + offense.getK(0).name + " missed the " + (110 - gameYardLine) + " yard FG.";
+                gameLog(playInfo, offense.abbr + " K " + offense.getK(0).name + " missed the " + (110 - gameYardLine) + " yard FG.", true);
                 offense.getK(0).statsFGAtt++;
                 if (!playingOT) {
                     gameYardLine = Math.max(100 - gameYardLine, 20); //Misses inside the 20 = defense takes over on the 20
@@ -1382,15 +1447,15 @@ public class Game implements Serializable {
 
         // No XP/2pt try if the TD puts the bottom OT offense ahead (aka wins the game)
         if (playingOT && bottomOT && (((numOT % 2 == 0) && awayScore > homeScore) || ((numOT % 2 != 0) && homeScore > awayScore))) {
-            gameEventLog += getEventLogScoring() + "TOUCHDOWN!\n" + tdInfo + "\n" + offense.abbr + " wins on a walk-off touchdown!";
+            gameLog(getEventLogScoring(), "TOUCHDOWN!\n" + tdInfo + "\n" + offense.abbr + " wins on a walk-off touchdown!", true);
         }
         // If a TD is scored as time expires, there is no XP/2pt if the score difference is greater than 2
         else if (!playingOT && gameTime <= 0 && ((homeScore - awayScore > 2) || (awayScore - homeScore > 2))) {
             //Walkoff TD!
             if ((Math.abs(homeScore - awayScore) < 7) && ((gamePoss && homeScore > awayScore) || (!gamePoss && awayScore > homeScore)))
-                gameEventLog += getEventLogScoring() + "TOUCHDOWN!\n" + tdInfo + "\n" + offense.abbr + " wins on a walk-off touchdown!";
+                gameLog(getEventLogScoring(), "TOUCHDOWN!\n" + tdInfo + "\n" + offense.abbr + " wins on a walk-off touchdown!", true);
                 //Just rubbing in the win or saving some pride
-            else gameEventLog += getEventLogScoring() + "TOUCHDOWN!\n" + tdInfo;
+            else gameLog(getEventLogScoring(), "TOUCHDOWN!\n" + tdInfo, true);
         } else {
             if ((numOT >= 3) || (((gamePoss && (awayScore - homeScore) == 2) || (!gamePoss && (homeScore - awayScore) == 2)) && gameTime < 300)) {
                 //go for 2
@@ -1407,9 +1472,9 @@ public class Game implements Serializable {
                             awayScore += 2;
                         }
                         addPointsQuarter(2);
-                        gameEventLog += getEventLogScoring() + "TOUCHDOWN!\n" + tdInfo + " " + offense.getRB(0).name + " rushed for the 2pt conversion.";
+                        gameLog(getEventLogScoring(), "TOUCHDOWN!\n" + tdInfo + " " + offense.getRB(0).name + " rushed for the 2pt conversion.", true);
                     } else {
-                        gameEventLog += getEventLogScoring() + "TOUCHDOWN!\n" + tdInfo + " " + offense.getRB(0).name + " stopped at the line of scrimmage, failed the 2pt conversion.";
+                        gameLog(getEventLogScoring(), "TOUCHDOWN!\n" + tdInfo + " " + offense.getRB(0).name + " stopped at the line of scrimmage, failed the 2pt conversion.", true);
                     }
                 } else {
                     int pressureOnQB = defense.getCompositeDLPass() * 2 - offense.getCompositeOLPass();
@@ -1422,9 +1487,9 @@ public class Game implements Serializable {
                             awayScore += 2;
                         }
                         addPointsQuarter(2);
-                        gameEventLog += getEventLogScoring() + "TOUCHDOWN!\n" + tdInfo + " " + offense.getQB(0).name + " completed the pass to " + offense.getWR(0).name + " for the 2pt conversion.";
+                        gameLog(getEventLogScoring(), "TOUCHDOWN!\n" + tdInfo + " " + offense.getQB(0).name + " completed the pass to " + offense.getWR(0).name + " for the 2pt conversion.", true);
                     } else {
-                        gameEventLog += getEventLogScoring() + "TOUCHDOWN!\n" + tdInfo + " " + offense.getQB(0).name + "'s pass incomplete to " + offense.getWR(0).name + " for the failed 2pt conversion.";
+                        gameLog(getEventLogScoring(), "TOUCHDOWN!\n" + tdInfo + " " + offense.getQB(0).name + "'s pass incomplete to " + offense.getWR(0).name + " for the failed 2pt conversion.", true);
                     }
                 }
 
@@ -1437,12 +1502,12 @@ public class Game implements Serializable {
                     } else {
                         awayScore += 1;
                     }
-                    gameEventLog += getEventLogScoring() + "TOUCHDOWN!\n" + tdInfo + " " + offense.getK(0).name + " made the XP.";
+                    gameLog(getEventLogScoring(), "TOUCHDOWN!\n" + tdInfo + " " + offense.getK(0).name + " made the XP.", true);
                     addPointsQuarter(1);
                     selK.statsXPMade++;
                     selK.gameXPMade++;
                 } else {
-                    gameEventLog += getEventLogScoring() + "TOUCHDOWN!\n" + tdInfo + " " + offense.getK(0).name + " missed the XP.";
+                    gameLog(getEventLogScoring(), "TOUCHDOWN!\n" + tdInfo + " " + offense.getK(0).name + " missed the XP.", true);
                     // missed XP
                 }
                 selK.statsXPAtt++;
@@ -1464,10 +1529,10 @@ public class Game implements Serializable {
                 // Yes, do onside
                 if (offense.getK(0).ratKickFum * Math.random() > 60 || Math.random() < 0.1) {
                     //Success!
-                    gameEventLog += playInfo + offense.abbr + " K " + offense.getK(0).name + " successfully executes onside kick! " + offense.abbr + " has possession!";
+                    gameLog(playInfo, offense.abbr + " K " + offense.getK(0).name + " successfully executes onside kick! " + offense.abbr + " has possession!", true);
                 } else {
                     // Fail
-                    gameEventLog += playInfo + offense.abbr + " K " + offense.getK(0).name + " failed the onside kick and lost possession.";
+                    gameLog(playInfo, offense.abbr + " K " + offense.getK(0).name + " failed the onside kick and lost possession.", true);
                     gamePoss = !gamePoss;
                 }
                 gameYardLine = (gameYardLine - 10) - (int) (10 * Math.random());
@@ -1500,9 +1565,9 @@ public class Game implements Serializable {
                 } else {
                     if (gameYardLine <= 0) {
                         gameYardLine = touchback;
-                        gameEventLog += "\n\nKick-off!\n" + returner.team + " " + returner.name + " lets it go for a touchback.";
+                        gameLog("\n\nKick-off!\n" + returner.team + " " + returner.name + " lets it go for a touchback.");
                     } else {
-                        gameEventLog += "\n\nKick-off!\n" + returner.team + " " + returner.name + " returns the kickoff to the " + gameYardLine + " yard line.";
+                        gameLog("\n\nKick-off!\n" + returner.team + " " + returner.name + " returns the kickoff to the " + gameYardLine + " yard line.");
                     }
                 }
             }
@@ -1523,13 +1588,13 @@ public class Game implements Serializable {
                 // Yes, do onside
                 if (offense.getK(0).ratKickFum * Math.random() > 60 || Math.random() < 0.1) {
                     //Success!
-                    gameEventLog += playInfo + offense.abbr + " K " + offense.getK(0).name + " successfully executes onside kick! " + offense.abbr + " has possession!";
+                    gameLog(playInfo, offense.abbr + " K " + offense.getK(0).name + " successfully executes onside kick! " + offense.abbr + " has possession!", true);
                     gameYardLine = 35;
                     gameDown = 1;
                     gameYardsNeed = 10;
                 } else {
                     // Fail
-                    gameEventLog += playInfo + offense.abbr + " K " + offense.getK(0).name + " failed the onside kick and lost possession.";
+                    gameLog(playInfo, offense.abbr + " K " + offense.getK(0).name + " failed the onside kick and lost possession.", true);
                     gamePoss = !gamePoss;
                     gameYardLine = 65;
                     gameDown = 1;
@@ -1564,9 +1629,9 @@ public class Game implements Serializable {
                 } else {
                     if (gameYardLine <= 0) {
                         gameYardLine = touchback;
-                        gameEventLog += "\n\nFree-Kick!\n" + returner.team + " " + returner.name + " lets it go for a touchback.";
+                        gameLog("\n\nFree-Kick!\n" + returner.team + " " + returner.name + " lets it go for a touchback.");
                     } else {
-                        gameEventLog += "\n\nFree-Kick!\n" + returner.team + " " + returner.name + " returns the free-kick to the " + gameYardLine + " yard line.";
+                        gameLog("\n\nFree-Kick!\n" + returner.team + " " + returner.name + " returns the free-kick to the " + gameYardLine + " yard line.");
                     }
                 }
 
@@ -1599,9 +1664,9 @@ public class Game implements Serializable {
         } else {
             if (gameYardLine <= 0) {
                 gameYardLine = touchback;
-                gameEventLog += "\n\nPunt!\n" + returner.team + " " + returner.name + " lets it go for a touchback.";
+                gameLog("\n\nPunt!\n" + returner.team + " " + returner.name + " lets it go for a touchback.");
             } else {
-                gameEventLog += "\n\nPunt!\n" + returner.team + " " + returner.name + " returns the punt to the " + gameYardLine + " yard line.";
+                gameLog("\n\nPunt!\n" + returner.team + " " + returner.name + " returns the punt to the " + gameYardLine + " yard line.");
             }
         }
 
@@ -1711,7 +1776,7 @@ public class Game implements Serializable {
                 awayScore += 6;
             }
         } else {
-            gameEventLog += playInfo + offense.abbr + " RB " + selRB.name + " rushed for " + yardsGain + " yards, and was tackled by " + defender + ".";
+            gameLog(playInfo, offense.abbr + " RB " + selRB.name + " rushed for " + yardsGain + " yards, and was tackled by " + defender + ".");
 
         }
     }
@@ -1767,9 +1832,9 @@ public class Game implements Serializable {
         }
 
         if (selRB.gameSim >= selQB.gameSim) {
-            gameEventLog += playInfo + "FUMBLE!\n" + offense.abbr + " RB " + selRB.name + " fumbled the ball while rushing and recovered by " + defender + ".";
+            gameLog(playInfo, "FUMBLE!\n" + offense.abbr + " RB " + selRB.name + " fumbled the ball while rushing and recovered by " + defender + ".", true);
         } else {
-            gameEventLog += playInfo + "FUMBLE!\n" + offense.abbr + " QB " + selQB.name + " fumbled the ball while rushing and recovered by " + defender + ".";
+            gameLog(playInfo, "FUMBLE!\n" + offense.abbr + " QB " + selQB.name + " fumbled the ball while rushing and recovered by " + defender + ".", true);
         }
 
     }
@@ -1936,7 +2001,7 @@ public class Game implements Serializable {
         selQB.gamePassInts++;
 
         //Log the event before decreasing the time, in keeping with the standard of other logged plays (TD, Fumble, etc.)
-        gameEventLog += playInfo + "INTERCEPTED!\n" + offense.abbr + " QB " + offense.getQB(0).name + " was intercepted by " + defender + ".";
+        gameLog(playInfo, "INTERCEPTED!\n" + offense.abbr + " QB " + offense.getQB(0).name + " was intercepted by " + defender + ".", true);
         //Clock stops after a pick, so just run time off the clock for the play that occurred
         //NOTE: If the ability to run an interception back is ever added, this should be changed to be more time
         gameTime -= timePerPlay * Math.random();
@@ -2002,8 +2067,8 @@ public class Game implements Serializable {
             return; // Run recordSafety then get out of recordSack (recordSafety() will take care of free kick)
         }
 
-        gameEventLog += playInfo + "SACK!\n" + " QB " + offense.getQB(0).name +
-                " was sacked for a loss of " + sackloss + " by " + defender + ".";
+        gameLog(playInfo, "SACK!\n" + " QB " + offense.getQB(0).name +
+                " was sacked for a loss of " + sackloss + " by " + defender + ".");
 
         gameDown++; // Advance gameDown after checking for Safety, otherwise game log reports Safety occurring one down later than it did
         gameYardsNeed += sackloss;
@@ -2063,19 +2128,19 @@ public class Game implements Serializable {
             defender = ("LB " + selLB.name);
         }
 
-        gameEventLog += playInfo + "FUMBLE!\n" + offense.abbr + " receiver " + selWR.name + " fumbled the ball after a catch. It was recovered by " + defender + ".";
+        gameLog(playInfo, "FUMBLE!\n" + offense.abbr + " receiver " + selWR.name + " fumbled the ball after a catch. It was recovered by " + defender + ".", true);
     }
 
     private void recordSafety(String defender) {
         if (gamePoss) {
             awayScore += 2;
-            gameEventLog += getEventLogScoring() + "SAFETY!\n" + homeTeam.abbr + " QB " + homeTeam.getQB(0).name +
-                    " was tackled in the endzone by " + defender + "! Result is a Safety and " + awayTeam.abbr + " will get possession.";
+            gameLog(getEventLogScoring(), "SAFETY!\n" + homeTeam.abbr + " QB " + homeTeam.getQB(0).name +
+                    " was tackled in the endzone by " + defender + "! Result is a Safety and " + awayTeam.abbr + " will get possession.", true);
             freeKick(homeTeam, awayTeam);
         } else {
             homeScore += 2;
-            gameEventLog += getEventLogScoring() + "SAFETY!\n" + awayTeam.abbr + " QB " + awayTeam.getQB(0).name +
-                    " was tackled in the endzone by " + defender + "! Result is a Safety and " + homeTeam.abbr + " will get possession.";
+            gameLog(getEventLogScoring(), "SAFETY!\n" + awayTeam.abbr + " QB " + awayTeam.getQB(0).name +
+                    " was tackled in the endzone by " + defender + "! Result is a Safety and " + homeTeam.abbr + " will get possession.", true);
             freeKick(awayTeam, homeTeam);
         }
     }
@@ -2159,6 +2224,7 @@ public class Game implements Serializable {
     //CLOCK AND HEALTH MANAGEMENT
 
     private void addPointsQuarter(int points) {
+        // TODO: this doesn't work for safeties!
         if (gamePoss) {
             //home poss
             if (gameTime > 2700) {
@@ -2238,7 +2304,7 @@ public class Game implements Serializable {
         }
     }
 
-    private String convGameTime() {
+    public String convGameTime() {
         if (!playingOT) {
             int qNum = (3600 - gameTime) / 900 + 1;
             int minTime;
@@ -2268,14 +2334,14 @@ public class Game implements Serializable {
             //Set Player Fatigue +50
             recoup(true, 1);
             gameTime = 2700;
-            gameEventLog += "\n\n-- 2nd QUARTER --";
+            gameLog("\n\n-- 2nd QUARTER --", true);
 
         } else if (gameTime < 1800 && !QT2) {
             QT2 = true;
             //Set Player Fatigue to 100
             recoup(true, 2);
             gameTime = 1800;
-            gameEventLog += "\n\n-- 3rd QUARTER --";
+            gameLog("\n\n-- 3rd QUARTER --", true);
             gamePoss = false;
             kickOff(awayTeam, homeTeam);
 
@@ -2284,7 +2350,7 @@ public class Game implements Serializable {
             //Set Player Fatigue +50
             recoup(true, 3);
             gameTime = 900;
-            gameEventLog += "\n\n-- 4th QUARTER --";
+            gameLog("\n\n-- 4th QUARTER --", true);
         }
 
     }
@@ -2736,7 +2802,7 @@ public class Game implements Serializable {
         return "\n\n[ " + homeTeam.abbr + " " + homeScore + " - " + awayScore + " " + awayTeam.abbr + " ]\n\t" + convGameTime() + " ";
     }
 
-    private String getEventLog() {
+    public String getEventLog() {
         String possStr;
         if (gamePoss) possStr = homeTeam.abbr;
         else possStr = awayTeam.abbr;
@@ -2751,12 +2817,12 @@ public class Game implements Serializable {
         return "\n\n" + convGameTime() + " " + possStr + " " + gameDownAdj + " and " + yardsNeedAdj + " at " + gameYardLinePlay + " yard line." + "\n";
     }
 
-    private String getEventLogScore() {
+    public String getEventLogScore() {
         String possStr;
         return "\n\n" + homeTeam.abbr + " " + homeScore + " - " + awayScore + " " + awayTeam.abbr;
     }
 
-    private int getPassYards(boolean ha) {
+    public int getPassYards(boolean ha) {
         //ha = home/away, false for home, true for away
         int yards = 0;
         if (!ha) {
