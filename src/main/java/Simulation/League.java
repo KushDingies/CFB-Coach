@@ -1,5 +1,7 @@
 package Simulation;
 
+import android.util.Log;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -119,7 +121,16 @@ public class League {
     public Team penalizedTeam5;
 
     //Current week, 1-14
-    public int currentWeek;
+    private int currentWeek;
+    public void advanceWeek() {
+        currentWeek++;
+        for (int i = 0; i < conferences.size(); ++i) {
+            conferences.get(i).week++;
+        }
+        Log.i("League.java", "Advancing league week");
+    }
+    public int getCurrentWeek() { return currentWeek; }
+    public void resetWeek() { currentWeek = 0; }
     public int randgm;
     public int randconf;
     public int countRealignment;
@@ -1086,6 +1097,7 @@ public class League {
      * Plays week. If normal week, handled by conferences. If bowl week, handled here.
      */
     public void playWeek() {
+        Log.i("League.java", "Playing week " + currentWeek);
         //focus on the best player at a position this year each week
         playerSpotlight();
 
@@ -1175,7 +1187,8 @@ public class League {
         setTeamRanks();
         updateLongestActiveWinStreak();
 
-        currentWeek++;
+        // don't do this here automatically anymore - this should only happen once the user plays his game
+        //currentWeek++;
     }
 
 

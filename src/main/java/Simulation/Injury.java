@@ -33,18 +33,18 @@ public class Injury {
         player.ratDur -= duration;
         if (player.ratDur < 0) player.ratDur = 0;
         if (player.ratOvr > 79 && duration > 4) {
-            player.team.league.newsStories.get(player.team.league.currentWeek + 1).add("Injury Report>A major injury was sustained by " + player.team.name + "'s star " + player.position + ", " + player.name + " today. During the game, " + player.name + " suffered a " + description
+            player.team.league.newsStories.get(player.team.league.getCurrentWeek() + 1).add("Injury Report>A major injury was sustained by " + player.team.name + "'s star " + player.position + ", " + player.name + " today. During the game, " + player.name + " suffered a " + description
                     + " injury and will be out for " + duration + " weeks.");
         }
 
-        if (duration > (12-player.team.league.currentWeek) && player.team.league.currentWeek < 6 && player.gamesStarted < 4) {
+        if (duration > (12-player.team.league.getCurrentWeek()) && player.team.league.getCurrentWeek() < 6 && player.gamesStarted < 4) {
             player.isMedicalRS = true;
             duration = 26;
             if (player.team.userControlled) {
-                player.team.league.newsStories.get(player.team.league.currentWeek + 1).add("Medical Redshirt>" + player.team.name + " " + player.position + " " + player.name + " sustained a major " + description + " injury and will be out for the season. A medical redshirt has been granted.");
+                player.team.league.newsStories.get(player.team.league.getCurrentWeek() + 1).add("Medical Redshirt>" + player.team.name + " " + player.position + " " + player.name + " sustained a major " + description + " injury and will be out for the season. A medical redshirt has been granted.");
             }
             if (!player.team.userControlled && player.ratOvr > 79) {
-                player.team.league.newsStories.get(player.team.league.currentWeek + 1).add("Medical Redshirt>"  + player.team.name + " " + player.position + " " + player.name + " sustained a major " + description + " injury and will be out for the season. A medical redshirt has been granted.");
+                player.team.league.newsStories.get(player.team.league.getCurrentWeek() + 1).add("Medical Redshirt>"  + player.team.name + " " + player.position + " " + player.name + " sustained a major " + description + " injury and will be out for the season. A medical redshirt has been granted.");
             }
         }
 

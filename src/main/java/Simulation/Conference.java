@@ -255,7 +255,6 @@ public class Conference {
                 }
             }
             if (week == 11) schedConfChamp();
-            week++;
         }
 
     }
