@@ -241,17 +241,17 @@ public class League {
         conferences.get(0).confTeams.add(new Team("Virginia IT", "VTEC", "Atlantic", 73, "VIR", 3, this));
 
         //Big Ten - done x 12
-        conferences.get(1).confTeams.add(new Team("Illinois", "ILL", "Great Lakes", 44, "NWU", 2, this));
+        conferences.get(1).confTeams.add(new Team("Illinois", "ILL", "Great Lakes", 44, "NU", 2, this));
         conferences.get(1).confTeams.add(new Team("Indiana", "IND", "Great Lakes", 44, "PUR", 2, this));
         conferences.get(1).confTeams.add(new Team("Iowa", "IOW", "Great Lakes", 64, "NEB", 1, this));
         conferences.get(1).confTeams.add(new Team("Michigan", "MIC", "Great Lakes", 75, "OSU", 2, this));
         conferences.get(1).confTeams.add(new Team("Michigan State", "MSU", "Great Lakes", 73, "PSU", 2, this));
         conferences.get(1).confTeams.add(new Team("Minnesota", "MIN", "Great Lakes", 60, "WIS", 1, this));
         conferences.get(1).confTeams.add(new Team("Nebraska", "NEB", "Great Lakes", 65, "IOW", 1, this));
-        conferences.get(1).confTeams.add(new Team("Chicago", "NWU", "Great Lakes", 68, "ILL", 2, this));
+        conferences.get(1).confTeams.add(new Team("Northwestern", "NU", "Great Lakes", 68, "ILL", 2, this));
         conferences.get(1).confTeams.add(new Team("Ohio State", "OSU", "Great Lakes", 84, "MIC", 2, this));
         conferences.get(1).confTeams.add(new Team("Penn State", "PSU", "Great Lakes", 80, "MSU", 3, this));
-        conferences.get(1).confTeams.add(new Team("West Lafayette", "PUR", "Great Lakes", 50, "IND", 2, this));
+        conferences.get(1).confTeams.add(new Team("Purdue", "PUR", "Great Lakes", 50, "IND", 2, this));
         conferences.get(1).confTeams.add(new Team("Wisconsin", "WIS", "Great Lakes", 79, "MIN", 2, this));
 
         //Big 12 - done x 12
