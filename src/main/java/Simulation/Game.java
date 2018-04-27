@@ -6,6 +6,7 @@ import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.InputMismatchException;
 
 import Comparator.CompGamePlayerPicker;
 import Comparator.CompPlayerPosition;
@@ -88,7 +89,12 @@ public class Game implements Serializable {
     private int gameTime;
     public boolean regulationIsOver() { return gameTime <= 0; }
     public boolean gameIsInProgress() { return gameTime < 3600 && !hasPlayed; }
-    private boolean gamePoss; //1 if home, 0 if away
+    private boolean gamePoss; //1 if home is offense, 0 if away
+    public boolean TeamIsOffense(Team team) {
+        if (!containsTeam(team))
+                throw new InputMismatchException();
+        return gamePoss && team == homeTeam || !gamePoss && team == awayTeam;
+    }
     private int gameYardLine;
     private int gameYardLinePlay;
     private int gameDown;
@@ -411,6 +417,9 @@ public class Game implements Serializable {
     }
 
     public void afterPlay() {
+
+        homeTeam.teamSelectedPlay = null;
+        awayTeam.teamSelectedPlay = null;
 
         // Check for turnover on downs
         if (gameDown > 4) {

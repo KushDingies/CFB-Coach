@@ -203,6 +203,7 @@ public class Team {
     public TeamStrategy teamStratDef;
     public int teamStratOffNum;
     public int teamStratDefNum;
+    public Play teamSelectedPlay;
 
     public boolean confTVDeal;
     public boolean teamTVDeal;

@@ -56,8 +56,11 @@ import Positions.PlayerS;
 import Positions.PlayerTE;
 import Positions.PlayerWR;
 import Simulation.Conference;
+import Simulation.DefensivePlay;
 import Simulation.Game;
 import Simulation.League;
+import Simulation.OffensivePlay;
+import Simulation.Play;
 import Simulation.Team;
 import Simulation.TeamStrategy;
 
@@ -1502,6 +1505,18 @@ public class MainActivity extends AppCompatActivity {
         final TextView playStatusText = dialog.findViewById(R.id.ingameDialogPlayStatus);
         final TextView prevPlayText = dialog.findViewById(R.id.ingameDialogPreviousPlay);
 
+        final TextView selectedPlayText = dialog.findViewById(R.id.ingameDialogSelectedPlay);
+        if (userTeam.teamSelectedPlay != null) {
+            selectedPlayText.setText(userTeam.teamSelectedPlay.name);
+        }
+        final Button changePlayButton = dialog.findViewById(R.id.buttonChangePlay);
+
+        changePlayButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                showPlaySelectDialog(g.TeamIsOffense(userTeam), selectedPlayText);
+            }
+        });
+
         if (!g.gameIsInProgress()) {
             g.setupGame();
         }
@@ -1544,19 +1559,9 @@ public class MainActivity extends AppCompatActivity {
 
                 playStatusText.setText(g.playInfo);
                 prevPlayText.setText(g.lastPlayLog);
+                selectedPlayText.setText("No play selected");
             }
         });
-
-    }
-
-    private void showPlaySelectDialog() {
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-
-        builder.setTitle("Pick a play").setView(getLayoutInflater()
-                .inflate(R.layout.play_select_dialog, null));
-        AlertDialog dialog = builder.create();
-        dialog.show();
 
     }
 
@@ -3380,7 +3385,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Dialog for coaches to select their team's next play during a game.
      */
-    private void showPlaySelectDialog(boolean playerIsOffense) {
+    private void showPlaySelectDialog(boolean playerIsOffense, final TextView playNameText) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Play Selector")
                 .setPositiveButton("OK", new DialogInterface.OnClickListener() {
@@ -3394,55 +3399,38 @@ public class MainActivity extends AppCompatActivity {
         dialog.show();
 
         // Get the options for plays in both offense and defense
-        final TeamStrategy[] tsOff = userTeam.getTeamStrategiesOff();
-        final TeamStrategy[] tsDef = userTeam.getTeamStrategiesDef();
-        int offPlayTypeNum = 0;
-        int defPlayTypeNum = 0;
+        final ArrayList<Play> plays;
+        if (playerIsOffense)
+            plays = Play.getOffensivePlays();
+        else
+            plays = Play.getDefensivePlays();
+        int playTypeNum = 0;
 
-        String[] playTypeSelectionOff = new String[4];
-        playTypeSelectionOff[0] = "Run";
-        playTypeSelectionOff[1] = "Pass";
-        playTypeSelectionOff[2] = "Punt";
-        playTypeSelectionOff[3] = "Place Kick";
-//        for (int i = 0; i < 2; ++i) {
-//            playOffSelection[i] = tsOff[i].getStratName();
-//            if (playOffSelection[i].equals(userTeam.teamStratOff.getStratName())) offStratNum = i;
-//        }
-
-        String[] playTypeSelectionDef = new String[3];
-        playTypeSelectionDef[0] = "Run";
-        playTypeSelectionDef[1] = "Pass";
-        playTypeSelectionDef[2] = "Balanced";
-//        for (int i = 0; i < tsDef.length; ++i) {
-//            stratDefSelection[i] = tsDef[i].getStratName();
-//            if (stratDefSelection[i].equals(userTeam.teamStratDef.getStratName())) defStratNum = i;
-//        }
+        String[] playTypeSelection = new String[plays.size()];
+        for (int ii = 0; ii < plays.size(); ii++) {
+            playTypeSelection[ii] = plays.get(ii).name;
+        }
 
         final TextView playDescription = dialog.findViewById(R.id.textPlayDescription);
-        //final TextView defStratDescription = dialog.findViewById(R.id.textDefenseStrategy);
 
         // Play Type Selection Spinner
         Spinner playTypeSelectionSpinner = dialog.findViewById(R.id.spinnerPlayType);
-        ArrayAdapter<String> playTypeSpinnerAdapter;
-        if (playerIsOffense) {
-            playTypeSpinnerAdapter = new ArrayAdapter<String>(this,
-                    android.R.layout.simple_spinner_item, playTypeSelectionOff);
-        } else {
-            playTypeSpinnerAdapter = new ArrayAdapter<String>(this,
-                    android.R.layout.simple_spinner_item, playTypeSelectionDef);
-        }
+        ArrayAdapter<String> playTypeSpinnerAdapter = new ArrayAdapter<String>(this,
+                    android.R.layout.simple_spinner_item, playTypeSelection);
+
         playTypeSpinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         playTypeSelectionSpinner.setAdapter(playTypeSpinnerAdapter);
-        playTypeSelectionSpinner.setSelection(offPlayTypeNum);
+        playTypeSelectionSpinner.setSelection(playTypeNum);
 
         playTypeSelectionSpinner.setOnItemSelectedListener(
                 new AdapterView.OnItemSelectedListener() {
                     public void onItemSelected(
                             AdapterView<?> parent, View view, int position, long id) {
                         playDescription.setText("Play description goes here");
-                        //playDescription.setText(tsOff[position].getStratDescription());
-                        //userTeam.teamStratOff = tsOff[position];
-                        //userTeam.teamStratOffNum = position;
+                        Play play = plays.get(position);
+                        playDescription.setText(play.description);
+                        userTeam.teamSelectedPlay = play;
+                        playNameText.setText(play.name);
                     }
 
                     public void onNothingSelected(AdapterView<?> parent) {

@@ -161,12 +161,40 @@
                 android:textAppearance="?android:attr/textAppearanceSmall"
                 android:textStyle="normal" />
 
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingEnd="30dp"
+                android:paddingStart="30dp">
+
+                <TextView
+                    android:id="@+id/ingameDialogSelectedPlay"
+                    android:layout_width="100dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1.0"
+                    android:gravity="center"
+                    android:text="No play selected"
+                    android:textAlignment="center"
+                    android:textAppearance="?android:attr/textAppearanceMedium"
+                    android:textStyle="bold" />
+
+                <Button
+                    android:id="@+id/buttonChangePlay"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_margin="10dp"
+                    android:background="@drawable/button_shape_fc_win"
+                    android:text="Change Play" />
+            </LinearLayout>
+
             <Button
                 android:id="@+id/buttonRunNextPlay"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
-                android:layout_margin="50dp"
+                android:layout_margin="30dp"
                 android:background="@drawable/button_shape_fc_win"
                 android:text="Run Play" />
 
