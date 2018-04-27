@@ -418,8 +418,8 @@ public class Game implements Serializable {
 
     public void afterPlay() {
 
-        homeTeam.teamSelectedPlay = null;
-        awayTeam.teamSelectedPlay = null;
+        homeTeam.teamSelectedPlay = Play.getAutoPlay();
+        awayTeam.teamSelectedPlay = Play.getAutoPlay();
 
         // Check for turnover on downs
         if (gameDown > 4) {
@@ -604,7 +604,7 @@ public class Game implements Serializable {
         
         playInfo = getEventLog();
 
-        if (offense.teamSelectedPlay != null) {
+        if (offense.teamSelectedPlay != null && offense.teamSelectedPlay.name != Play.getAutoPlay().name) {
             OffensivePlay offensePlay = (OffensivePlay) offense.teamSelectedPlay;
             switch (offensePlay.offPlayType) {
                 case RUN:
@@ -1717,9 +1717,9 @@ public class Game implements Serializable {
         } else {
             if (gameYardLine <= 0) {
                 gameYardLine = touchback;
-                gameLog("\nPunt!\n" + returner.team + " " + returner.name + " lets it go for a touchback.");
+                gameLog("Punt!\n" + returner.team + " " + returner.name + " lets it go for a touchback.");
             } else {
-                gameLog("\nPunt!\n" + returner.team + " " + returner.name + " returns the punt to the " + gameYardLine + " yard line.");
+                gameLog("Punt!\n" + returner.team + " " + returner.name + " returns the punt to the " + gameYardLine + " yard line.");
             }
         }
 

@@ -14,6 +14,7 @@ public class Play {
 
     public static ArrayList<Play> getOffensivePlays() {
         ArrayList<Play> plays = new ArrayList<Play>();
+        plays.add(getAutoPlay());
         plays.add(new OffensivePlay("Run", "Run the ball.", OffensivePlay.type.RUN));
         plays.add(new OffensivePlay("Pass", "Pass the ball.", OffensivePlay.type.PASS));
         plays.add(new OffensivePlay("Punt", "Punt the ball.", OffensivePlay.type.PUNT));
@@ -24,11 +25,16 @@ public class Play {
 
     public static ArrayList<Play> getDefensivePlays() {
         ArrayList<Play> plays = new ArrayList<Play>();
+        plays.add(getAutoPlay());
         plays.add(new DefensivePlay("Balanced", "A nice balanced defense.", DefensivePlay.expect.BALANCED));
         plays.add(new DefensivePlay("Expect Run", "Tell your players to expect a run.", DefensivePlay.expect.RUN));
         plays.add(new DefensivePlay("Expect Pass", "Tell your players to be ready for a pass.", DefensivePlay.expect.PASS));
 
         return plays;
+    }
+
+    public static Play getAutoPlay() {
+        return new Play("Auto", "Let the computer choose for you.");
     }
 }
 
