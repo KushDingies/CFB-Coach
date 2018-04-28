@@ -105,6 +105,7 @@ public class Game implements Serializable {
     private int gameYardsNeed;
     public boolean playingOT;
     private boolean bottomOT;
+    public boolean kickoff, PAT;
 
     private final int timePerPlay = 22; //affects snaps per game!
     private final int intValue = 150; //higher less ints
@@ -319,7 +320,7 @@ public class Game implements Serializable {
 
     public void setupGame() {
 
-        //Log.i("setupGame", "setting up game: " + awayTeam.abbr + " @ " + homeTeam.abbr);
+        Log.i("setupGame", "setting up game: " + awayTeam.abbr + " @ " + homeTeam.abbr);
         playInfo = "";
         lastPlayLog = "";
         gameEventLog = "";
@@ -398,11 +399,11 @@ public class Game implements Serializable {
 
         getReturner();
 
-        kickOff(homeTeam, awayTeam);
+        kickoff = true;
     }
 
     private void gameLog(String playInfo, String playSummary, boolean alwaysLog) {
-        //Log.i("Game.java gameLog", playInfo + "|" + playSummary);
+        Log.i("Game.java gameLog", playInfo + "|" + playSummary);
         if (alwaysLog || homeTeam.league.fullGameLog)
             gameEventLog += playInfo + playSummary;
         lastPlayLog += playSummary;
@@ -499,7 +500,8 @@ public class Game implements Serializable {
             gameTime = -1;
             gameDown = 1;
             gameYardsNeed = 10;
-
+            kickoff = false;
+            PAT = false;
         }
 
         if (!playingOT) {
@@ -592,8 +594,23 @@ public class Game implements Serializable {
 
     public void runPlay() {
         lastPlayLog = "";
-        if (gamePoss) runPlay(homeTeam, awayTeam);
-        else runPlay(awayTeam, homeTeam);
+
+        Team offense, defense;
+        if (gamePoss) {
+            offense = homeTeam;
+            defense = awayTeam;
+        } else {
+            offense = awayTeam;
+            defense = homeTeam;
+        }
+
+        if (PAT) {
+            doPAT(offense, defense);
+        } else if (kickoff) {
+            kickOff(offense, defense);
+        } else {
+            runPlay(offense, defense);
+        }
 
         afterPlay();
     }
@@ -1318,9 +1335,8 @@ public class Game implements Serializable {
 
         if (gotTD) {
             gameTime -= timePerPlay * Math.random();
-            kickXP(offense, defense);
-            if (!playingOT) kickOff(offense, defense);
-            else resetForOT();
+            gameLog(getEventLogScoring(), "TOUCHDOWN!\n" + tdInfo, true);
+            checkForPAT(offense, defense);
             return;
         }
 
@@ -1395,9 +1411,8 @@ public class Game implements Serializable {
 
         if (gotTD) {
             gameTime -= 5 + timePerPlay * Math.random(); // Clock stops for the TD, just burn time for the play
-            kickXP(offense, defense);
-            if (!playingOT) kickOff(offense, defense);
-            else resetForOT();
+            gameLog(getEventLogScoring(), "TOUCHDOWN!\n" + tdInfo, true);
+            checkForPAT(offense, defense);
         } else {
             gameTime -= timePerPlay + timePerPlay * Math.random();
             //check for fumble
@@ -1457,7 +1472,7 @@ public class Game implements Serializable {
                 selK.gameFGMade++;
                 selK.gameFGAttempts++;
 
-                if (!playingOT) kickOff(offense, defense);
+                if (!playingOT) kickoff = true;
                 else resetForOT();
 
             } else {
@@ -1490,7 +1505,7 @@ public class Game implements Serializable {
                 selK.gameFGMade++;
                 selK.gameFGAttempts++;
 
-                if (!playingOT) kickOff(offense, defense);
+                if (!playingOT) kickoff = true;
                 else resetForOT();
 
             } else {
@@ -1511,78 +1526,91 @@ public class Game implements Serializable {
 
     }
 
-    private void kickXP(Team offense, Team defense) {
-        PlayerK selK = offense.getK(0);
+    private void checkForPAT(Team offense, Team defense) {
 
         // No XP/2pt try if the TD puts the bottom OT offense ahead (aka wins the game)
         if (playingOT && bottomOT && (((numOT % 2 == 0) && awayScore > homeScore) || ((numOT % 2 != 0) && homeScore > awayScore))) {
             gameLog(getEventLogScoring(), "TOUCHDOWN!\n" + tdInfo + "\n" + offense.abbr + " wins on a walk-off touchdown!", true);
+            return;
         }
         // If a TD is scored as time expires, there is no XP/2pt if the score difference is greater than 2
-        else if (!playingOT && gameTime <= 0 && ((homeScore - awayScore > 2) || (awayScore - homeScore > 2))) {
+        if (!playingOT && gameTime <= 0 && ((homeScore - awayScore > 2) || (awayScore - homeScore > 2))) {
             //Walkoff TD!
             if ((Math.abs(homeScore - awayScore) < 7) && ((gamePoss && homeScore > awayScore) || (!gamePoss && awayScore > homeScore)))
                 gameLog(getEventLogScoring(), "TOUCHDOWN!\n" + tdInfo + "\n" + offense.abbr + " wins on a walk-off touchdown!", true);
                 //Just rubbing in the win or saving some pride
             else gameLog(getEventLogScoring(), "TOUCHDOWN!\n" + tdInfo, true);
-        } else {
-            if ((numOT >= 3) || (((gamePoss && (awayScore - homeScore) == 2) || (!gamePoss && (homeScore - awayScore) == 2)) && gameTime < 300)) {
-                //go for 2
-                boolean successConversion = false;
-                if (Math.random() <= 0.50) {
-                    //rushing
-                    int blockAdv = offense.getCompositeOLRush() - defense.getCompositeDLRush();
-                    int yardsGain = (int) ((offense.getRB(0).ratSpeed + blockAdv) * Math.random() / 6);
-                    if (yardsGain > 5) {
-                        successConversion = true;
-                        if (gamePoss) { // home possession
-                            homeScore += 2;
-                        } else {
-                            awayScore += 2;
-                        }
-                        addPointsQuarter(2);
-                        gameLog(getEventLogScoring(), "TOUCHDOWN!\n" + tdInfo + " " + offense.getRB(0).name + " rushed for the 2pt conversion.", true);
-                    } else {
-                        gameLog(getEventLogScoring(), "TOUCHDOWN!\n" + tdInfo + " " + offense.getRB(0).name + " stopped at the line of scrimmage, failed the 2pt conversion.", true);
-                    }
-                } else {
-                    int pressureOnQB = defense.getCompositeDLPass() * 2 - offense.getCompositeOLPass();
-                    double completion = (normalize(offense.getQB(0).ratPassAcc) + offense.getWR(0).ratCatch - defense.getCB(0).ratCoverage) / 2 + 25 - pressureOnQB / 20;
-                    if (100 * Math.random() < completion) {
-                        successConversion = true;
-                        if (gamePoss) { // home possession
-                            homeScore += 2;
-                        } else {
-                            awayScore += 2;
-                        }
-                        addPointsQuarter(2);
-                        gameLog(getEventLogScoring(), "TOUCHDOWN!\n" + tdInfo + " " + offense.getQB(0).name + " completed the pass to " + offense.getWR(0).name + " for the 2pt conversion.", true);
-                    } else {
-                        gameLog(getEventLogScoring(), "TOUCHDOWN!\n" + tdInfo + " " + offense.getQB(0).name + "'s pass incomplete to " + offense.getWR(0).name + " for the failed 2pt conversion.", true);
-                    }
-                }
 
-            } else {
-                //kick XP
-                if (Math.random() * 100 < 23 + offense.getK(0).ratKickAcc && Math.random() > 0.01) {
-                    //made XP
-                    if (gamePoss) { // home possession
-                        homeScore += 1;
-                    } else {
-                        awayScore += 1;
-                    }
-                    gameLog(getEventLogScoring(), "TOUCHDOWN!\n" + tdInfo + " " + offense.getK(0).name + " made the XP.", true);
-                    addPointsQuarter(1);
-                    selK.statsXPMade++;
-                    selK.gameXPMade++;
-                } else {
-                    gameLog(getEventLogScoring(), "TOUCHDOWN!\n" + tdInfo + " " + offense.getK(0).name + " missed the XP.", true);
-                    // missed XP
-                }
-                selK.statsXPAtt++;
-                selK.gameXPAttempts++;
-            }
+            return;
         }
+
+        PAT = true;
+    }
+
+    public void doPAT(Team offense, Team defense) {
+        PlayerK selK = offense.getK(0);
+
+        // decide whether to kick PAT or go for 2
+        if ((numOT >= 3) || (((gamePoss && (awayScore - homeScore) == 2) || (!gamePoss && (homeScore - awayScore) == 2)) && gameTime < 300)) {
+            //go for 2
+            boolean successConversion = false;
+            if (Math.random() <= 0.50) {
+                //rushing
+                int blockAdv = offense.getCompositeOLRush() - defense.getCompositeDLRush();
+                int yardsGain = (int) ((offense.getRB(0).ratSpeed + blockAdv) * Math.random() / 6);
+                if (yardsGain > 5) {
+                    successConversion = true;
+                    if (gamePoss) { // home possession
+                        homeScore += 2;
+                    } else {
+                        awayScore += 2;
+                    }
+                    addPointsQuarter(2);
+                    gameLog(getEventLogScoring(), offense.getRB(0).name + " rushed for the 2pt conversion.", true);
+                } else {
+                    gameLog(getEventLogScoring(), offense.getRB(0).name + " stopped at the line of scrimmage, failed the 2pt conversion.", true);
+                }
+            } else {
+                int pressureOnQB = defense.getCompositeDLPass() * 2 - offense.getCompositeOLPass();
+                double completion = (normalize(offense.getQB(0).ratPassAcc) + offense.getWR(0).ratCatch - defense.getCB(0).ratCoverage) / 2 + 25 - pressureOnQB / 20;
+                if (100 * Math.random() < completion) {
+                    successConversion = true;
+                    if (gamePoss) { // home possession
+                        homeScore += 2;
+                    } else {
+                        awayScore += 2;
+                    }
+                    addPointsQuarter(2);
+                    gameLog(getEventLogScoring(), offense.getQB(0).name + " completed the pass to " + offense.getWR(0).name + " for the 2pt conversion.", true);
+                } else {
+                    gameLog(getEventLogScoring(), offense.getQB(0).name + "'s pass incomplete to " + offense.getWR(0).name + " for the failed 2pt conversion.", true);
+                }
+            }
+
+        } else {
+            //kick XP
+            if (Math.random() * 100 < 23 + offense.getK(0).ratKickAcc && Math.random() > 0.01) {
+                //made XP
+                if (gamePoss) { // home possession
+                    homeScore += 1;
+                } else {
+                    awayScore += 1;
+                }
+                gameLog(getEventLogScoring(), offense.getK(0).name + " made the XP.", true);
+                addPointsQuarter(1);
+                selK.statsXPMade++;
+                selK.gameXPMade++;
+            } else {
+                gameLog(getEventLogScoring(), offense.getK(0).name + " missed the XP.", true);
+                // missed XP
+            }
+            selK.statsXPAtt++;
+            selK.gameXPAttempts++;
+        }
+
+        PAT = false;
+        if (!playingOT) kickoff = true;
+        else resetForOT();
     }
 
     private void kickOff(Team offense, Team defense) {
@@ -1628,21 +1656,21 @@ public class Game implements Serializable {
                     }
                     tdInfo = returner.team + " " + returner.position + " " + returner.name + " returns the kick " + returnYards + " yards for a TOUCHDOWN!";
                     returner.kTD++;
-                    kickXP(defense, offense);
-                    if (!playingOT) kickOff(defense, offense);
-                    else resetForOT();
+                    checkForPAT(defense, offense);
                 } else {
                     if (gameYardLine <= 0) {
                         gameYardLine = touchback;
-                        gameLog("\n\nKick-off!\n" + returner.team + " " + returner.name + " lets it go for a touchback.");
+                        gameLog("Kick-off!\n" + returner.team + " " + returner.name + " lets it go for a touchback.");
                     } else {
-                        gameLog("\n\nKick-off!\n" + returner.team + " " + returner.name + " returns the kickoff to the " + gameYardLine + " yard line.");
+                        gameLog("Kick-off!\n" + returner.team + " " + returner.name + " returns the kickoff to the " + gameYardLine + " yard line.");
                     }
                 }
             }
 
             gameYardLinePlay = gameYardLine;
             gameTime -= timePerPlay * Math.random();
+
+            kickoff = false;
         }
     }
 
@@ -1693,9 +1721,7 @@ public class Game implements Serializable {
                     }
                     tdInfo = returner.team + " " + returner.position + " " + returner.name + " returns the kick " + returnYards + " yards for a TOUCHDOWN!";
                     returner.kTD++;
-                    kickXP(defense, offense);
-                    if (!playingOT) kickOff(defense, offense);
-                    else resetForOT();
+                    checkForPAT(defense, offense);
                 } else {
                     if (gameYardLine <= 0) {
                         gameYardLine = touchback;
@@ -1728,9 +1754,7 @@ public class Game implements Serializable {
             }
             tdInfo = returner.team + " " + returner.position + " " + returner.name + " returns the punt " + returnYards + " yards for a TOUCHDOWN!";
             returner.pTD++;
-            kickXP(defense, offense);
-            if (!playingOT) kickOff(defense, offense);
-            else resetForOT();
+            checkForPAT(defense, offense);
         } else {
             if (gameYardLine <= 0) {
                 gameYardLine = touchback;
@@ -2426,7 +2450,7 @@ public class Game implements Serializable {
             gameTime = 1800;
             gameLog("\n\n-- 3rd QUARTER --\n\n", true);
             gamePoss = false;
-            kickOff(awayTeam, homeTeam);
+            kickoff = true;
             return true;
         } else if (gameTime < 900 && !QT3) {
             QT3 = true;
@@ -2874,6 +2898,7 @@ public class Game implements Serializable {
     }
 
     private String getEventLogScoring() {
+
         String possStr;
         if (gamePoss) possStr = homeTeam.abbr;
         else possStr = awayTeam.abbr;
@@ -2904,7 +2929,16 @@ public class Game implements Serializable {
         if (convGameTime.equals("End of Q1") || convGameTime.equals("Halftime")
                 || convGameTime.equals("End of Q3") || convGameTime.equals("End of regulation"))
             return convGameTime;
-        return "\n\n" + convGameTime + " " + possStr + " " + gameDownAdj + " and " + yardsNeedAdj + " at " + gameYardLinePlay + " yard line." + "\n";
+
+        String gameStatus = "";
+        if (PAT)
+            gameStatus += "PAT attempt\n";
+        else if (kickoff)
+            gameStatus += "Kickoff\n";
+        else
+            gameStatus += possStr + " " + gameDownAdj + " and " + yardsNeedAdj + " at " + gameYardLinePlay + " yard line." + "\n";
+
+        return "\n\n" + convGameTime + " " + gameStatus;
     }
 
     public String getEventLogScore() {
