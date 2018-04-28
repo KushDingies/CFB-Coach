@@ -696,21 +696,17 @@ public class Game implements Serializable {
             if (((gamePoss && (awayScore - homeScore) <= 3) || (!gamePoss && (homeScore - awayScore) <= 3)) && gameYardLine > 60) {
                 //last second FGA
                 offense.teamSelectedPlay = Play.getRandomOffensivePlayByType(KICK);
-                //fieldGoalAtt(offense, defense);
             } else {
                 //hail mary
                 offense.teamSelectedPlay = Play.getRandomOffensivePlayByType(PASS);
-                //setupPassingPlay(offense, defense);
             }
         } else if (gameDown >= 4) {
             if (((gamePoss && (awayScore - homeScore) > 3) || (!gamePoss && (homeScore - awayScore) > 3)) && gameTime < 300) {
                 //go for it since we need 7 to win -- This also forces going for it if down by a TD in BOT OT
                 if (gameYardsNeed < 3 && preferRush * 3 > preferPass) {
                     offense.teamSelectedPlay = Play.getRandomOffensivePlayByType(OffensivePlay.type.RUN);
-                    //setupRushingPlay(offense, defense);
                 } else {
                     offense.teamSelectedPlay = Play.getRandomOffensivePlayByType(PASS);
-                    //setupPassingPlay(offense, defense);
                 }
             } else {
                 //4th down
@@ -718,34 +714,27 @@ public class Game implements Serializable {
                     if (gameYardLine > 65) {
                         //fga
                         offense.teamSelectedPlay = Play.getRandomOffensivePlayByType(KICK);
-                        //fieldGoalAtt(offense, defense);
                     } else if (gameYardLine > 55) {
                         // run play, go for it!
                         offense.teamSelectedPlay = Play.getRandomOffensivePlayByType(OffensivePlay.type.RUN);
-                        //setupRushingPlay(offense, defense);
                     } else {
                         //punt
                         offense.teamSelectedPlay = Play.getRandomOffensivePlayByType(OffensivePlay.type.PUNT);
-                        //puntPlay(offense, defense);
                     }
                 } else if (gameYardLine > 60) {
                     //fga
                     offense.teamSelectedPlay = Play.getRandomOffensivePlayByType(KICK);
-                    //fieldGoalAtt(offense, defense);
                 } else {
                     //punt
                     offense.teamSelectedPlay = Play.getRandomOffensivePlayByType(OffensivePlay.type.PUNT);
-                    //puntPlay(offense, defense);
                 }
             }
         } else if ((gameDown == 3 && gameYardsNeed > 4) || ((gameDown == 1 || gameDown == 2) && (preferPass >= preferRush))) {
             // pass play
             offense.teamSelectedPlay = Play.getRandomOffensivePlayByType(PASS);
-            //setupPassingPlay(offense, defense);
         } else {
             //run play
             offense.teamSelectedPlay = Play.getRandomOffensivePlayByType(OffensivePlay.type.RUN);
-            //setupRushingPlay(offense, defense);
         }
     }
 
