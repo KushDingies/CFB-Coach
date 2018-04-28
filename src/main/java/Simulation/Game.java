@@ -628,30 +628,33 @@ public class Game implements Serializable {
         gameYardLinePlay = gameYardLine;
 
         if (offense.teamSelectedPlay instanceof OffensivePlay) {
-            switch (((OffensivePlay) offense.teamSelectedPlay).offPlayType) {
-                case RUN:
-                    setupRushingPlay(offense, defense);
-                    break;
-                case PASS:
-                    setupPassingPlay(offense, defense);
-                    break;
-                case KICK:
-                    fieldGoalAtt(offense, defense);
-                    break;
-                case PUNT:
-                    puntPlay(offense, defense);
-                    break;
-                default:
-                    Log.i("Game.java", "Invalid offense play type, defaulting to auto play select");
-                    autoChoosePlay(offense, defense);
-            }
-
+            doOffenseSelectedPlay(offense, defense);
         } else {
             autoChoosePlay(offense, defense);
         }
 
         gameYardLinePlay = gameYardLine;
 
+    }
+
+    private void doOffenseSelectedPlay(Team offense, Team defense) {
+        switch (((OffensivePlay) offense.teamSelectedPlay).offPlayType) {
+            case RUN:
+                setupRushingPlay(offense, defense);
+                break;
+            case PASS:
+                setupPassingPlay(offense, defense);
+                break;
+            case KICK:
+                fieldGoalAtt(offense, defense);
+                break;
+            case PUNT:
+                puntPlay(offense, defense);
+                break;
+            default:
+                Log.i("Game.java", "Invalid offense play type, defaulting to auto play select");
+                autoChoosePlay(offense, defense);
+        }
     }
 
     private void autoChoosePlay(Team offense, Team defense) {
@@ -1550,11 +1553,21 @@ public class Game implements Serializable {
     public void doPAT(Team offense, Team defense) {
         PlayerK selK = offense.getK(0);
 
+        boolean autoGoFor2 = (numOT >= 3) || (((gamePoss && (awayScore - homeScore) == 2) || (!gamePoss && (homeScore - awayScore) == 2)) && gameTime < 300);
+        boolean offenseChosePlay = offense.teamSelectedPlay instanceof OffensivePlay;
+        boolean offenseChosePass = offenseChosePlay
+                && ((OffensivePlay) offense.teamSelectedPlay).offPlayType == OffensivePlay.type.PASS;
+        boolean offenseChoseRun = offenseChosePlay
+                && ((OffensivePlay) offense.teamSelectedPlay).offPlayType == OffensivePlay.type.RUN;
+        boolean offenseChoseKick = offenseChosePlay
+                && ((OffensivePlay) offense.teamSelectedPlay).offPlayType == OffensivePlay.type.KICK;
+
         // decide whether to kick PAT or go for 2
-        if ((numOT >= 3) || (((gamePoss && (awayScore - homeScore) == 2) || (!gamePoss && (homeScore - awayScore) == 2)) && gameTime < 300)) {
+        if (offenseChosePass || offenseChoseRun || !offenseChosePlay && autoGoFor2) {
             //go for 2
             boolean successConversion = false;
-            if (Math.random() <= 0.50) {
+            boolean autoRun = Math.random() <= 0.50;
+            if (offenseChoseRun || !offenseChosePlay && autoRun) {
                 //rushing
                 int blockAdv = offense.getCompositeOLRush() - defense.getCompositeDLRush();
                 int yardsGain = (int) ((offense.getRB(0).ratSpeed + blockAdv) * Math.random() / 6);
@@ -1588,6 +1601,12 @@ public class Game implements Serializable {
             }
 
         } else {
+
+            if (numOT >= 3) {
+                gameLog("Invalid play", "It is at least 3rd overtime - you must go for 2!");
+                return;
+            }
+
             //kick XP
             if (Math.random() * 100 < 23 + offense.getK(0).ratKickAcc && Math.random() > 0.01) {
                 //made XP
