@@ -96,18 +96,18 @@ public class Play {
 
         OffensivePlay insideRun = new OffensivePlay("Inside run", "A conservative run up the middle.", OffensivePlay.type.RUN);
         insideRun.runBlocking = 2 * scale;
-        insideRun.runPotential = -1 * scale;
+        insideRun.runPotential = -1;
         plays.add(insideRun);
 
         OffensivePlay outsideRun = new OffensivePlay("Outside run", "A run to the outside with more risk but more potential.", OffensivePlay.type.RUN);
         outsideRun.runBlocking = -2 * scale;
-        outsideRun.runPotential = 2 * scale;
+        outsideRun.runPotential = 2;
         plays.add(outsideRun);
 
         OffensivePlay shortPass = new OffensivePlay("Short pass", "A conservative pass with a higher completion percentage.", OffensivePlay.type.PASS);
         shortPass.passBlocking = 1 * scale;
         shortPass.catchMod = 2 * scale;
-        shortPass.passPotential = -1 * scale;
+        shortPass.passPotential = -1;
         plays.add(shortPass);
 
         OffensivePlay mediumPass = new OffensivePlay("Medium pass", "A regular pass.", OffensivePlay.type.PASS);
@@ -116,11 +116,11 @@ public class Play {
         OffensivePlay deepPass = new OffensivePlay("Deep pass", "A longer pass that's harder to achieve.", OffensivePlay.type.PASS);
         deepPass.passBlocking = -1 * scale;
         deepPass.sackMod = 2 * scale;
-        deepPass.passPotential = 5 * scale;
+        deepPass.passPotential = 3;
         plays.add(deepPass);
 
         plays.add(new OffensivePlay("Punt", "Punt the ball.", OffensivePlay.type.PUNT));
-        plays.add(new OffensivePlay("Kick", "Try to kick the ball through the uprights.", OffensivePlay.type.KICK));
+        plays.add(new OffensivePlay("Field Goal", "Try to kick the ball through the uprights.", OffensivePlay.type.KICK));
 
         return plays;
     }
@@ -160,18 +160,18 @@ public class Play {
 
         DefensivePlay expectRun = new DefensivePlay("Expect Run", "Tell your players to expect a run.", DefensivePlay.expect.RUN);
         expectRun.runStopping = 2 * scale;
-        expectRun.runPotential = -1 * scale;
+        expectRun.runPotential = -1;
         expectRun.passRush = -2 * scale;
-        expectRun.passPotential = 3 * scale;
+        expectRun.passPotential = 2;
         expectRun.catchMod = 2 * scale;
         expectRun.intMod = -2 * scale;
         plays.add(expectRun);
 
         DefensivePlay expectPass = new DefensivePlay("Expect Pass", "Tell your players to be ready for a pass.", DefensivePlay.expect.PASS);
-        expectPass.runStopping = -3 * scale;
-        expectPass.runPotential = 2 * scale;
+        expectPass.runStopping = -2 * scale;
+        expectPass.runPotential = 2;
         expectPass.passRush = 2 * scale;
-        expectPass.passPotential = -2 * scale;
+        expectPass.passPotential = -2;
         expectPass.catchMod = -2 * scale;
         expectPass.intMod = 2 * scale;
         plays.add(expectPass);
@@ -179,8 +179,8 @@ public class Play {
         DefensivePlay blitz = new DefensivePlay("Blitz", "Send extra defenders forward. Higher chance of creating big plays on either side.", DefensivePlay.expect.BALANCED);
         blitz.runStopping = 4 * scale;
         blitz.passRush = 4 * scale;
-        blitz.runPotential = 4 * scale;
-        blitz.passPotential = 6 * scale;
+        blitz.runPotential = 3;
+        blitz.passPotential = 3;
         blitz.sackMod = 3 * scale;
         blitz.intMod = 3 * scale;
         plays.add(blitz);

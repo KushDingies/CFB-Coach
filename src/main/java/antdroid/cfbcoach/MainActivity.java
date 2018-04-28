@@ -1522,7 +1522,6 @@ public class MainActivity extends AppCompatActivity {
         }
         awayTeamScoreText.setText(Integer.toString(g.awayScore));
         homeTeamScoreText.setText(Integer.toString(g.homeScore));
-        playStatusText.setText(g.playInfo);
         prevPlayText.setText(g.lastPlayLog);
         playResultText.setText("\nIt is now " + g.getEventLog().replace("\n", ""));
 
@@ -1540,6 +1539,8 @@ public class MainActivity extends AppCompatActivity {
                     dialog.dismiss();
                     return;
                 }
+
+                playStatusText.setText(g.getEventLog());
 
                 g.runPlay();
 
@@ -1562,7 +1563,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
 
-                playStatusText.setText(g.playInfo);
+                //playStatusText.setText(g.playInfo);
                 prevPlayText.setText(g.lastPlayLog);
                 playResultText.setText("\nIt is now " + g.getEventLog().replace("\n", ""));
                 selectedPlayText.setText(userTeam.teamSelectedPlay.name);

@@ -105,7 +105,6 @@ public class Game implements Serializable {
 
     //private variables used when simming games
     private int gameTime;
-    public int getGameTime() { return gameTime; }
     private void runGameTime() {
 
     }
@@ -2535,7 +2534,7 @@ public class Game implements Serializable {
             //Set Player Fatigue +50
             recoup(true, 1);
             gameTime = 2700;
-            gameLog("\n\n-- 2nd QUARTER --\n\n", true);
+            gameLog("\n-- 2nd QUARTER --\n", true);
             return true;
 
         } else if (gameTime < 1800 && !QT2) {
@@ -2543,7 +2542,7 @@ public class Game implements Serializable {
             //Set Player Fatigue to 100
             recoup(true, 2);
             gameTime = 1800;
-            gameLog("\n\n-- 3rd QUARTER --\n\n", true);
+            gameLog("\n-- 3rd QUARTER --\n", true);
             gamePoss = false;
             kickoff = true;
             return true;
@@ -2552,7 +2551,7 @@ public class Game implements Serializable {
             //Set Player Fatigue +50
             recoup(true, 3);
             gameTime = 900;
-            gameLog("\n\n-- 4th QUARTER --\n\n", true);
+            gameLog("\n-- 4th QUARTER --\n", true);
             return true;
         }
 
