@@ -125,7 +125,8 @@ public class Game implements Serializable {
     private boolean bottomOT;
     public boolean kickoff, PAT;
     public boolean suppressPlaySelect() {
-        return kickoff || hasPlayed || gameTime <= 2700 && !QT1 || gameTime <= 900 && !QT3;
+        return kickoff || hasPlayed || gameTime <= 2700 && !QT1
+                || gameTime <= 1800 && !QT2 || gameTime <= 900 && !QT3;
     }
 
     private final int timePerPlay = 22; //affects snaps per game!
@@ -3022,7 +3023,7 @@ public class Game implements Serializable {
         String convGameTime = convGameTime();
         if (convGameTime.equals("End of Q1") || convGameTime.equals("Halftime")
                 || convGameTime.equals("End of Q3") || convGameTime.equals("End of regulation"))
-            return convGameTime;
+            return "\n\n" + convGameTime;
 
         String gameStatus = "";
         if (PAT)
