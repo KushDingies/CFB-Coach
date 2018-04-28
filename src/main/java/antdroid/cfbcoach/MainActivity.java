@@ -1514,7 +1514,7 @@ public class MainActivity extends AppCompatActivity {
 
         changePlayButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                showPlaySelectDialog(g.TeamIsOffense(userTeam), selectedPlayText);
+                showPlaySelectDialog(g.TeamIsOffense(userTeam), selectedPlayText, g);
             }
         });
 
@@ -3389,7 +3389,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Dialog for coaches to select their team's next play during a game.
      */
-    private void showPlaySelectDialog(boolean playerIsOffense, final TextView playNameText) {
+    private void showPlaySelectDialog(boolean playerIsOffense, final TextView playNameText, final Game g) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Play Selector")
                 .setPositiveButton("OK", new DialogInterface.OnClickListener() {
@@ -3432,7 +3432,10 @@ public class MainActivity extends AppCompatActivity {
                             AdapterView<?> parent, View view, int position, long id) {
                         playDescription.setText("Play description goes here");
                         Play play = plays.get(position);
-                        playDescription.setText(play.getFullDescription());
+                        String desc = play.getFullDescription();
+                        if (play instanceof OffensivePlay && ((OffensivePlay) play).offPlayType == OffensivePlay.type.KICK)
+                            desc += " (" + (117 - g.getGameYardLine()) + " yard attempt)";
+                        playDescription.setText(desc);
                         userTeam.teamSelectedPlay = play;
                         playNameText.setText(play.name);
                     }

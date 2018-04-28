@@ -96,6 +96,7 @@ public class Game implements Serializable {
         return gamePoss && team == homeTeam || !gamePoss && team == awayTeam;
     }
     private int gameYardLine;
+    public int getGameYardLine() { return gameYardLine; }
     private int gameYardLinePlay;
     private int gameDown;
     private int gameYardsNeed;

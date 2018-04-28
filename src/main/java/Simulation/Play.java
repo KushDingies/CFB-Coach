@@ -83,17 +83,17 @@ public class Play {
         plays.add(getAutoPlay());
 
         OffensivePlay insideRun = new OffensivePlay("Inside run", "A conservative run up the middle.", OffensivePlay.type.RUN);
-        insideRun.runBlocking = 1;
+        insideRun.runBlocking = 2;
         insideRun.runPotential = -1;
         plays.add(insideRun);
 
         OffensivePlay outsideRun = new OffensivePlay("Outside run", "A run to the outside with more risk but more potential.", OffensivePlay.type.RUN);
-        outsideRun.runBlocking = -1;
-        outsideRun.runPotential = 1;
+        outsideRun.runBlocking = -2;
+        outsideRun.runPotential = 2;
         plays.add(outsideRun);
 
         OffensivePlay shortPass = new OffensivePlay("Short pass", "A conservative pass with a higher completion percentage.", OffensivePlay.type.PASS);
-        shortPass.catchMod = 1;
+        shortPass.catchMod = 2;
         shortPass.passPotential = -1;
         plays.add(shortPass);
 
@@ -102,8 +102,8 @@ public class Play {
 
         OffensivePlay deepPass = new OffensivePlay("Deep pass", "A longer pass that's harder to achieve.", OffensivePlay.type.PASS);
         deepPass.passBlocking = -1;
-        deepPass.sackMod = 1;
-        deepPass.passPotential = 2;
+        deepPass.sackMod = 2;
+        deepPass.passPotential = 5;
         plays.add(deepPass);
 
         plays.add(new OffensivePlay("Punt", "Punt the ball.", OffensivePlay.type.PUNT));
@@ -122,27 +122,27 @@ public class Play {
         expectRun.runStopping = 2;
         expectRun.runPotential = -1;
         expectRun.passRush = -2;
-        expectRun.passPotential = 2;
-        expectRun.catchMod = 1;
-        expectRun.intMod = -1;
+        expectRun.passPotential = 3;
+        expectRun.catchMod = 2;
+        expectRun.intMod = -2;
         plays.add(expectRun);
 
         DefensivePlay expectPass = new DefensivePlay("Expect Pass", "Tell your players to be ready for a pass.", DefensivePlay.expect.PASS);
-        expectPass.runStopping = -2;
+        expectPass.runStopping = -3;
         expectPass.runPotential = 2;
         expectPass.passRush = 2;
-        expectPass.passPotential = -1;
-        expectPass.catchMod = -1;
-        expectPass.intMod = 1;
+        expectPass.passPotential = -2;
+        expectPass.catchMod = -2;
+        expectPass.intMod = 2;
         plays.add(expectPass);
 
         DefensivePlay blitz = new DefensivePlay("Blitz", "Send extra defenders forward. Higher chance of creating big plays on either side.", DefensivePlay.expect.BALANCED);
-        blitz.runStopping = 3;
-        blitz.passRush = 3;
-        blitz.runPotential = 3;
-        blitz.passPotential = 5;
-        blitz.sackMod = 2;
-        blitz.intMod = 1;
+        blitz.runStopping = 4;
+        blitz.passRush = 4;
+        blitz.runPotential = 4;
+        blitz.passPotential = 6;
+        blitz.sackMod = 3;
+        blitz.intMod = 3;
         plays.add(blitz);
 
         return plays;
