@@ -101,6 +101,7 @@ public class Game implements Serializable {
     private String tdInfo;
     public String playInfo;
     public String lastPlayLog;
+    private String playFeedback;
 
     //private variables used when simming games
     private int gameTime;
@@ -345,6 +346,7 @@ public class Game implements Serializable {
         playInfo = "";
         lastPlayLog = "";
         gameEventLog = "";
+        playFeedback = "";
         gameLog(awayTeam.rankTeamPollScore + " " + awayTeam.abbr + " (" + awayTeam.wins + "-" + awayTeam.losses + ") @ #" +
                 homeTeam.rankTeamPollScore + " " + homeTeam.abbr + " (" + homeTeam.wins + "-" + homeTeam.losses + ")" + "\n" +
                 "---------------------------------------------------------\n\n" +
@@ -424,10 +426,10 @@ public class Game implements Serializable {
     }
 
     private void gameLog(String playInfo, String playSummary, boolean alwaysLog) {
-        Log.i("Game.java gameLog", playInfo + "|" + playSummary);
+        //Log.i("Game.java gameLog", playInfo + "|" + playSummary);
         if (alwaysLog || homeTeam.league.fullGameLog)
             gameEventLog += playInfo + playSummary;
-        lastPlayLog += playSummary;
+        lastPlayLog += playFeedback + playSummary;
     }
 
     private void gameLog(String playInfo, String playSummary) {
@@ -440,6 +442,10 @@ public class Game implements Serializable {
 
     private void gameLog(String playSummary) {
         gameLog("", playSummary);
+    }
+
+    private void gameLogNewDown(String s) {
+        lastPlayLog += s;
     }
 
     public void afterPlay() {
@@ -606,6 +612,7 @@ public class Game implements Serializable {
 
     public void runPlay() {
         lastPlayLog = "";
+        playFeedback = "";
 
         if (PAT) {
             doPAT(getOffense(), getDefense());
@@ -1080,19 +1087,35 @@ public class Game implements Serializable {
         boolean gotTD = false;
         boolean gotFumble = false;
 
+        if (defense.teamSelectedPlay instanceof DefensivePlay) {
+            if (((DefensivePlay) defense.teamSelectedPlay).defPlayExpect == DefensivePlay.expect.PASS)
+                playFeedback += "The defense was ready for the pass!\n";
+            else if (((DefensivePlay) defense.teamSelectedPlay).defPlayExpect == DefensivePlay.expect.RUN)
+                playFeedback += "The defense was expecting a run!\n";
+        }
+
         //get how much pressure there is on qb, check if sack
         int pressureOnQB = getCompositeDLPass(selLB2) * 2 - getCompositeOLPass() - getHFadv() - (int) (Math.random() * coachAdv()) + (defense.teamStratDef.getRunProtection() * 2 - offense.teamStratDef.getRunProtection()
             + defense.teamSelectedPlay.passRush - offense.teamSelectedPlay.passBlocking + defense.teamSelectedPlay.sackMod + offense.teamSelectedPlay.sackMod);
         // SACK OUTCOME
-        if (Math.random() * sackValue < pressureOnQB / 8) {
+        double roll = Math.random() * sackValue;
+        if (roll < pressureOnQB / 8) {
 
-            if (Math.random() * 100 < pressureOnQB / 8 && selQB.ratSpeed > selDL.ratPassRush + defense.teamSelectedPlay.sackMod + offense.teamSelectedPlay.sackMod) {
+            roll = Math.random() * 100;
+            int qbSpeedCheck = selQB.ratSpeed - (selDL.ratPassRush + defense.teamSelectedPlay.sackMod + offense.teamSelectedPlay.sackMod);
+            if (roll < pressureOnQB / 8 && qbSpeedCheck > 0) {
                 //ESCAPE SACK
+                playFeedback +="The defense almost got a sack, but the QB escaped!\n";
                 selQB.gameSim = 1;
                 selRB.gameSim = 0;
                 rushPlay(offense, defense, selQB, selRB, selTE, selDL, selLB, selCB, selS);
             } else {
                 //sacked!
+
+                if (qbSpeedCheck * -1 < defense.teamSelectedPlay.sackMod) {
+                    playFeedback += "A good defensive playcall led to a sack!\n";
+                }
+
                 selDL.gameSim = selDL.ratTackle * Math.random() * 100;
                 selLB.gameSim = selLB2.ratTackle * Math.random() * 60;
                 selS.gameSim = selS.ratTackle * Math.random() * 25;
@@ -1113,8 +1136,13 @@ public class Game implements Serializable {
                         - offense.teamStratOff.getPassProtection() + defense.teamStratDef.getPassProtection()
                         - offense.teamSelectedPlay.passBlocking + defense.teamSelectedPlay.passRush + offense.teamSelectedPlay.intMod + defense.teamSelectedPlay.intMod;
                 if (intChance < 0.015) intChance = 0.015;
-                if (intValue * Math.random() < intChance) {
+                double intCheck = intValue * Math.random() - intChance;
+                if (intCheck < 0) {
                     //Interception
+                    if (intCheck * -1 < defense.teamSelectedPlay.intMod)
+                        playFeedback += "A good defensive playcall led to an interception!\n";
+//                    if (intCheck * -1 < offense.teamSelectedPlay.intMod)
+//                        playFeedback += "A bad offensive playcall led to an interception! ";
                     if (pos.equals("WR")) {
                         selDL.gameSim = selDL.ratPassRush * Math.random() * 15;
                         selCB.gameSim = selCB.ratCoverage * Math.random() * 100;
@@ -1139,24 +1167,24 @@ public class Game implements Serializable {
             }
 
             //Check for completion
-            double completion;
+            double completionChance;
 
             if (pos.equals("WR")) {
-                completion = (getHFadv() + (int) (Math.random() * coachAdv()) + normalize(selQB.ratPassAcc) + normalize(selWR.ratCatch)
+                completionChance = (getHFadv() + (int) (Math.random() * coachAdv()) + normalize(selQB.ratPassAcc) + normalize(selWR.ratCatch)
                         - normalize(selCB.ratCoverage)) / 2 + 18.25 - pressureOnQB / 16.8 + offense.teamStratOff.getPassProtection() - defense.teamStratDef.getPassProtection()
                         + offense.teamSelectedPlay.passBlocking - defense.teamSelectedPlay.passRush;
             } else if (pos.equals("TE")) {
-                completion = (getHFadv() + (int) (Math.random() * coachAdv()) + normalize(selQB.ratPassAcc) + normalize(selTE.ratCatch)
+                completionChance = (getHFadv() + (int) (Math.random() * coachAdv()) + normalize(selQB.ratPassAcc) + normalize(selTE.ratCatch)
                         - normalize(selLB.ratCoverage)) / 2 + 18.25 - pressureOnQB / 16.8 + offense.teamStratOff.getPassProtection() - defense.teamStratDef.getPassProtection()
                         + offense.teamSelectedPlay.passBlocking - defense.teamSelectedPlay.passRush;
             } else {
-                completion = (getHFadv() + (int) (Math.random() * coachAdv()) + normalize(selQB.ratPassAcc) + normalize(selRB.ratCatch)
+                completionChance = (getHFadv() + (int) (Math.random() * coachAdv()) + normalize(selQB.ratPassAcc) + normalize(selRB.ratCatch)
                         - normalize(selLB2.ratCoverage)) / 2 + 18.25 - pressureOnQB / 16.8 + offense.teamStratOff.getPassProtection() - defense.teamStratDef.getPassProtection()
                         + offense.teamSelectedPlay.passBlocking - defense.teamSelectedPlay.passRush;
             }
 
-
-            if (compValue * Math.random() < completion) {
+            double compCheck = compValue * Math.random() - completionChance;
+            if (compCheck < 0) {
                 if (pos.equals("WR")) {
                     if (100 * Math.random() < (100 - selWR.ratCatch) / 3 + offense.teamSelectedPlay.catchMod + defense.teamSelectedPlay.catchMod) {
                         //drop
@@ -1197,6 +1225,10 @@ public class Game implements Serializable {
                     }
                 }
 
+                if (compCheck * -1 < defense.teamSelectedPlay.passRush)
+                    playFeedback += "A good defensive playcall led to an incompletion.\n";
+                if (compCheck > offense.teamSelectedPlay.passBlocking)
+                    playFeedback += "A poor offensive playcall led to an incompletion.\n";
 
                 //no completion, advance downs
                 gameLog(playInfo, offense.abbr + " QB " + selQB.name + " threw an incomplete pass to the " + pos + ".");
@@ -1212,6 +1244,11 @@ public class Game implements Serializable {
 
 
             } else {
+
+                if (compCheck < offense.teamSelectedPlay.passBlocking)
+                    playFeedback += "A good offensive playcall led to a completion!\n";
+//                if (compCheck < defense.teamSelectedPlay.passRush * -1)
+//                    playFeedback += "A bad defensive playcall led to a completion. ";
 
                 //COMPLETED PASS
                 double escapeChance;
@@ -1310,7 +1347,7 @@ public class Game implements Serializable {
                         // Only set new down and distance if there wasn't a TD
                         gameDown = 1;
                         gameYardsNeed = 10;
-                        gameLog("\nFIRST DOWN!");
+                        gameLogNewDown("\nFIRST DOWN!");
 
                     } else gameDown++;
                 }
@@ -1384,9 +1421,9 @@ public class Game implements Serializable {
 
         //Start Rush Play
         if (selRB.gameSim >= selQB.gameSim) {
-            yardsGain = (int) ((selRB.ratSpeed + blockAdv + blockAdvOutside + getHFadv() + (int) (Math.random() * coachAdv())) * Math.random() / 10 + ((double) offense.teamStratOff.getRunPotential() - defense.teamStratDef.getRunPotential() + offense.teamSelectedPlay.runPotential + defense.teamSelectedPlay.passPotential) / 2);
+            yardsGain = (int) ((selRB.ratSpeed + blockAdv + blockAdvOutside + getHFadv() + (int) (Math.random() * coachAdv())) * Math.random() / 10 + ((double) offense.teamStratOff.getRunPotential() - defense.teamStratDef.getRunPotential() + offense.teamSelectedPlay.runPotential + defense.teamSelectedPlay.runPotential) / 2);
         } else {
-            yardsGain = (int) ((selQB.ratSpeed + blockAdv + blockAdvOutside + getHFadv() + (int) (Math.random() * coachAdv())) * Math.random() / 10 + ((double) offense.teamStratOff.getRunPotential() - defense.teamStratDef.getRunPotential() + offense.teamSelectedPlay.runPotential + defense.teamSelectedPlay.passPotential) / 2);
+            yardsGain = (int) ((selQB.ratSpeed + blockAdv + blockAdvOutside + getHFadv() + (int) (Math.random() * coachAdv())) * Math.random() / 10 + ((double) offense.teamStratOff.getRunPotential() - defense.teamStratDef.getRunPotential() + offense.teamSelectedPlay.runPotential + defense.teamSelectedPlay.runPotential) / 2);
         }
 
         //Break past neutral zone
@@ -1410,6 +1447,13 @@ public class Game implements Serializable {
             }
         }
 
+        if (defense.teamSelectedPlay instanceof DefensivePlay) {
+            if (yardsGain < 5 && ((DefensivePlay) defense.teamSelectedPlay).defPlayExpect == DefensivePlay.expect.RUN)
+                playFeedback += "The defense was ready for the run!\n";
+            if (((DefensivePlay) defense.teamSelectedPlay).defPlayExpect == DefensivePlay.expect.PASS)
+                playFeedback += "The defense was expecting a pass!\n";
+        }
+
         //add yardage
         gameYardLine += yardsGain;
 
@@ -1431,7 +1475,7 @@ public class Game implements Serializable {
                 // Only set new down and distance if there wasn't a TD
                 gameDown = 1;
                 gameYardsNeed = 10;
-                gameLog("\nFIRST DOWN!");
+                gameLogNewDown("\nFIRST DOWN!");
             } else gameDown++;
         }
 

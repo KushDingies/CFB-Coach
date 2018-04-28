@@ -11,6 +11,8 @@ public class Play {
     public int intMod; // affects interception chance
     public int sackMod; // affects QB sack chance
 
+    final static int scale = 2;
+
     protected Play(String n, String d) {
         name = n;
         description = d;
@@ -93,28 +95,28 @@ public class Play {
         ArrayList<OffensivePlay> plays = new ArrayList<OffensivePlay>();
 
         OffensivePlay insideRun = new OffensivePlay("Inside run", "A conservative run up the middle.", OffensivePlay.type.RUN);
-        insideRun.runBlocking = 2;
-        insideRun.runPotential = -1;
+        insideRun.runBlocking = 2 * scale;
+        insideRun.runPotential = -1 * scale;
         plays.add(insideRun);
 
         OffensivePlay outsideRun = new OffensivePlay("Outside run", "A run to the outside with more risk but more potential.", OffensivePlay.type.RUN);
-        outsideRun.runBlocking = -2;
-        outsideRun.runPotential = 2;
+        outsideRun.runBlocking = -2 * scale;
+        outsideRun.runPotential = 2 * scale;
         plays.add(outsideRun);
 
         OffensivePlay shortPass = new OffensivePlay("Short pass", "A conservative pass with a higher completion percentage.", OffensivePlay.type.PASS);
-        shortPass.passBlocking = 1;
-        shortPass.catchMod = 2;
-        shortPass.passPotential = -1;
+        shortPass.passBlocking = 1 * scale;
+        shortPass.catchMod = 2 * scale;
+        shortPass.passPotential = -1 * scale;
         plays.add(shortPass);
 
         OffensivePlay mediumPass = new OffensivePlay("Medium pass", "A regular pass.", OffensivePlay.type.PASS);
         plays.add(mediumPass);
 
         OffensivePlay deepPass = new OffensivePlay("Deep pass", "A longer pass that's harder to achieve.", OffensivePlay.type.PASS);
-        deepPass.passBlocking = -1;
-        deepPass.sackMod = 2;
-        deepPass.passPotential = 5;
+        deepPass.passBlocking = -1 * scale;
+        deepPass.sackMod = 2 * scale;
+        deepPass.passPotential = 5 * scale;
         plays.add(deepPass);
 
         plays.add(new OffensivePlay("Punt", "Punt the ball.", OffensivePlay.type.PUNT));
@@ -157,30 +159,30 @@ public class Play {
         plays.add(new DefensivePlay("Balanced", "A nice balanced defense.", DefensivePlay.expect.BALANCED));
 
         DefensivePlay expectRun = new DefensivePlay("Expect Run", "Tell your players to expect a run.", DefensivePlay.expect.RUN);
-        expectRun.runStopping = 2;
-        expectRun.runPotential = -1;
-        expectRun.passRush = -2;
-        expectRun.passPotential = 3;
-        expectRun.catchMod = 2;
-        expectRun.intMod = -2;
+        expectRun.runStopping = 2 * scale;
+        expectRun.runPotential = -1 * scale;
+        expectRun.passRush = -2 * scale;
+        expectRun.passPotential = 3 * scale;
+        expectRun.catchMod = 2 * scale;
+        expectRun.intMod = -2 * scale;
         plays.add(expectRun);
 
         DefensivePlay expectPass = new DefensivePlay("Expect Pass", "Tell your players to be ready for a pass.", DefensivePlay.expect.PASS);
-        expectPass.runStopping = -3;
-        expectPass.runPotential = 2;
-        expectPass.passRush = 2;
-        expectPass.passPotential = -2;
-        expectPass.catchMod = -2;
-        expectPass.intMod = 2;
+        expectPass.runStopping = -3 * scale;
+        expectPass.runPotential = 2 * scale;
+        expectPass.passRush = 2 * scale;
+        expectPass.passPotential = -2 * scale;
+        expectPass.catchMod = -2 * scale;
+        expectPass.intMod = 2 * scale;
         plays.add(expectPass);
 
         DefensivePlay blitz = new DefensivePlay("Blitz", "Send extra defenders forward. Higher chance of creating big plays on either side.", DefensivePlay.expect.BALANCED);
-        blitz.runStopping = 4;
-        blitz.passRush = 4;
-        blitz.runPotential = 4;
-        blitz.passPotential = 6;
-        blitz.sackMod = 3;
-        blitz.intMod = 3;
+        blitz.runStopping = 4 * scale;
+        blitz.passRush = 4 * scale;
+        blitz.runPotential = 4 * scale;
+        blitz.passPotential = 6 * scale;
+        blitz.sackMod = 3 * scale;
+        blitz.intMod = 3 * scale;
         plays.add(blitz);
 
         return plays;
