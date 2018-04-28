@@ -1501,7 +1501,6 @@ public class MainActivity extends AppCompatActivity {
         awayTeamText.setText(g.awayTeam.abbr);
         final TextView homeTeamText = dialog.findViewById(R.id.ingameDialogScoreHomeName);
         homeTeamText.setText(g.homeTeam.abbr);
-        final TextView gametimeText = dialog.findViewById(R.id.ingameDialogGametimeText);
         final TextView playStatusText = dialog.findViewById(R.id.ingameDialogPlayStatus);
         final TextView prevPlayText = dialog.findViewById(R.id.ingameDialogPreviousPlay);
         final TextView playResultText = dialog.findViewById(R.id.ingameDialogPlayResult);
@@ -1521,7 +1520,6 @@ public class MainActivity extends AppCompatActivity {
         if (!g.gameIsInProgress()) {
             g.setupGame();
         }
-        gametimeText.setText(g.convGameTime());
         awayTeamScoreText.setText(Integer.toString(g.awayScore));
         homeTeamScoreText.setText(Integer.toString(g.homeScore));
         playStatusText.setText(g.playInfo);
@@ -1541,7 +1539,6 @@ public class MainActivity extends AppCompatActivity {
 
                 g.runPlay();
 
-                gametimeText.setText(g.convGameTime());
                 awayTeamScoreText.setText(Integer.toString(g.awayScore));
                 homeTeamScoreText.setText(Integer.toString(g.homeScore));
 
@@ -1556,6 +1553,7 @@ public class MainActivity extends AppCompatActivity {
                             // game is over.
                             g.postGame();
                             runPlayButton.setText("Finish game");
+
                         }
                     }
                 }
@@ -1564,6 +1562,18 @@ public class MainActivity extends AppCompatActivity {
                 prevPlayText.setText(g.lastPlayLog);
                 playResultText.setText("\nIt is now " + g.getEventLog().replace("\n", ""));
                 selectedPlayText.setText("No play selected");
+
+                if (g.hasPlayed) {
+                    // game is over.
+                    String winningTeam = "";
+                    if (g.homeScore > g.awayScore)
+                        winningTeam += g.homeTeam.name;
+                    else
+                        winningTeam += g.awayTeam.name;
+                    playResultText.setText(winningTeam + " wins!");
+                    selectedPlayText.setVisibility(View.GONE);
+                    changePlayButton.setVisibility(View.GONE);
+                }
             }
         });
 

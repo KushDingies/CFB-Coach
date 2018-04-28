@@ -87,6 +87,9 @@ public class Game implements Serializable {
 
     //private variables used when simming games
     private int gameTime;
+    private void runGameTime() {
+
+    }
     public boolean regulationIsOver() { return gameTime <= 0; }
     public boolean gameIsInProgress() { return gameTime < 3600 && !hasPlayed; }
     private boolean gamePoss; //1 if home is offense, 0 if away
@@ -598,12 +601,14 @@ public class Game implements Serializable {
     // PRE-SNAP DECISIONS
 
     private void runPlay(Team offense, Team defense) {
-        quarterCheck();
+
+        playInfo = getEventLog();
+
+        if (quarterCheck())
+            return;
         recoup(false, 0);
         snapCount++;
         gameYardLinePlay = gameYardLine;
-        
-        playInfo = getEventLog();
 
         if (offense.teamSelectedPlay instanceof OffensivePlay) {
             switch (((OffensivePlay) offense.teamSelectedPlay).offPlayType) {
@@ -2378,6 +2383,18 @@ public class Game implements Serializable {
             if (gameTime <= 0 && numOT <= 0) { // Prevent Q5 1X:XX from displaying in the game log
                 return "0:00 Q4";
             } else {
+
+                // special end-of-quarter cases
+                if (gameTime <= 2700 && !QT1) {
+                    return "End of Q1";
+                } else if (gameTime <= 1800 && !QT2) {
+                    return "Halftime";
+                } else if (gameTime <= 900 && !QT3) {
+                    return "End of Q3";
+                } else if (gameTime <= 0 || hasPlayed) {
+                    return "End of regulation";
+                }
+
                 minTime = (gameTime - 900 * (4 - qNum)) / 60;
                 secTime = (gameTime - 900 * (4 - qNum)) - 60 * minTime;
                 if (secTime < 10) secStr = "0" + secTime;
@@ -2393,13 +2410,14 @@ public class Game implements Serializable {
         }
     }
 
-    private void quarterCheck() {
+    private boolean quarterCheck() {
         if (gameTime < 2700 && !QT1) {
             QT1 = true;
             //Set Player Fatigue +50
             recoup(true, 1);
             gameTime = 2700;
             gameLog("\n\n-- 2nd QUARTER --\n\n", true);
+            return true;
 
         } else if (gameTime < 1800 && !QT2) {
             QT2 = true;
@@ -2409,14 +2427,17 @@ public class Game implements Serializable {
             gameLog("\n\n-- 3rd QUARTER --\n\n", true);
             gamePoss = false;
             kickOff(awayTeam, homeTeam);
-
+            return true;
         } else if (gameTime < 900 && !QT3) {
             QT3 = true;
             //Set Player Fatigue +50
             recoup(true, 3);
             gameTime = 900;
             gameLog("\n\n-- 4th QUARTER --\n\n", true);
+            return true;
         }
+
+        return false;
 
     }
 
@@ -2879,7 +2900,11 @@ public class Game implements Serializable {
         } else {
             gameDownAdj = gameDown;
         }
-        return "\n\n" + convGameTime() + " " + possStr + " " + gameDownAdj + " and " + yardsNeedAdj + " at " + gameYardLinePlay + " yard line." + "\n";
+        String convGameTime = convGameTime();
+        if (convGameTime.equals("End of Q1") || convGameTime.equals("Halftime")
+                || convGameTime.equals("End of Q3") || convGameTime.equals("End of regulation"))
+            return convGameTime;
+        return "\n\n" + convGameTime + " " + possStr + " " + gameDownAdj + " and " + yardsNeedAdj + " at " + gameYardLinePlay + " yard line." + "\n";
     }
 
     public String getEventLogScore() {
