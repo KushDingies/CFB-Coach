@@ -1561,7 +1561,7 @@ public class MainActivity extends AppCompatActivity {
                 playStatusText.setText(g.playInfo);
                 prevPlayText.setText(g.lastPlayLog);
                 playResultText.setText("\nIt is now " + g.getEventLog().replace("\n", ""));
-                selectedPlayText.setText("No play selected");
+                selectedPlayText.setText(userTeam.teamSelectedPlay.name);
 
                 if (g.hasPlayed) {
                     // game is over.

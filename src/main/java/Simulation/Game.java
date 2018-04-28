@@ -26,11 +26,28 @@ import Positions.PlayerST;
 import Positions.PlayerTE;
 import Positions.PlayerWR;
 
+import static Simulation.OffensivePlay.type.KICK;
+import static Simulation.OffensivePlay.type.PASS;
+import static Simulation.OffensivePlay.type.RUN;
+
 
 public class Game implements Serializable {
 
     public final Team homeTeam;
     public final Team awayTeam;
+    public Team getOffense() {
+        if (gamePoss)
+            return homeTeam;
+        else
+            return awayTeam;
+    }
+
+    public Team getDefense() {
+        if (gamePoss)
+            return awayTeam;
+        else
+            return homeTeam;
+    }
 
     public boolean containsTeam(Team t) {
         return t == homeTeam || t == awayTeam;
@@ -87,6 +104,7 @@ public class Game implements Serializable {
 
     //private variables used when simming games
     private int gameTime;
+    public int getGameTime() { return gameTime; }
     private void runGameTime() {
 
     }
@@ -423,25 +441,12 @@ public class Game implements Serializable {
 
     public void afterPlay() {
 
-        homeTeam.teamSelectedPlay = Play.getAutoPlay();
-        awayTeam.teamSelectedPlay = Play.getAutoPlay();
-
         // Check for turnover on downs
         if (gameDown > 4) {
 
-            Team offense;
-            Team defense;
-            if (gamePoss) {
-                offense = homeTeam;
-                defense = awayTeam;
-            } else {
-                offense = awayTeam;
-                defense = homeTeam;
-            }
-
             if (!playingOT) {
                 //Log the turnover on downs, reset down and distance, give possession to the defense, exit this runPlay()
-                gameLog(playInfo, "TURNOVER ON DOWNS!\n" + offense.abbr + " failed to convert on " + (gameDown - 1) + "th down. " + defense.abbr + " takes over possession on downs.", true);
+                gameLog(playInfo, "TURNOVER ON DOWNS!\n" + getOffense().abbr + " failed to convert on " + (gameDown - 1) + "th down. " + getDefense().abbr + " takes over possession on downs.", true);
 
                 //Turn over on downs, change possession, set to first down and 10 yards to go
                 gamePoss = !gamePoss;
@@ -452,11 +457,15 @@ public class Game implements Serializable {
 
             } else {
                 //OT is over for the offense, log the turnover on downs, run resetForOT().
-                gameLog(playInfo, "TURNOVER ON DOWNS!\n" + offense.abbr + " failed to convert on " + (gameDown - 1) + "th down in OT and their possession is over.", true);
+                gameLog(playInfo, "TURNOVER ON DOWNS!\n" + getOffense().abbr + " failed to convert on " + (gameDown - 1) + "th down in OT and their possession is over.", true);
                 resetForOT();
 
             }
         }
+
+
+        autoChooseOffensivePlay();
+        getDefense().teamSelectedPlay = Play.getRandomDefensivePlay();
 
     }
 
@@ -595,21 +604,12 @@ public class Game implements Serializable {
     public void runPlay() {
         lastPlayLog = "";
 
-        Team offense, defense;
-        if (gamePoss) {
-            offense = homeTeam;
-            defense = awayTeam;
-        } else {
-            offense = awayTeam;
-            defense = homeTeam;
-        }
-
         if (PAT) {
-            doPAT(offense, defense);
+            doPAT(getOffense(), getDefense());
         } else if (kickoff) {
-            kickOff(offense, defense);
+            kickOff(getOffense(), getDefense());
         } else {
-            runPlay(offense, defense);
+            runPlay(getOffense(), getDefense());
         }
 
         afterPlay();
@@ -628,16 +628,19 @@ public class Game implements Serializable {
         gameYardLinePlay = gameYardLine;
 
         if (offense.teamSelectedPlay instanceof OffensivePlay) {
-            doOffenseSelectedPlay(offense, defense);
+            doOffenseSelectedPlay();
         } else {
-            autoChoosePlay(offense, defense);
+            autoChooseOffensivePlay();
+            doOffenseSelectedPlay();
         }
 
         gameYardLinePlay = gameYardLine;
 
     }
 
-    private void doOffenseSelectedPlay(Team offense, Team defense) {
+    private void doOffenseSelectedPlay() {
+        Team offense = getOffense();
+        Team defense = getDefense();
         switch (((OffensivePlay) offense.teamSelectedPlay).offPlayType) {
             case RUN:
                 setupRushingPlay(offense, defense);
@@ -653,11 +656,29 @@ public class Game implements Serializable {
                 break;
             default:
                 Log.i("Game.java", "Invalid offense play type, defaulting to auto play select");
-                autoChoosePlay(offense, defense);
+                autoChooseOffensivePlay();
         }
     }
 
-    private void autoChoosePlay(Team offense, Team defense) {
+    private void autoChooseOffensivePlay() {
+
+        Team offense = getOffense();
+        Team defense = getDefense();
+
+        if (PAT) {
+            boolean goFor2 = (numOT >= 3) || (((gamePoss && (awayScore - homeScore) == 2) || (!gamePoss && (homeScore - awayScore) == 2)) && gameTime < 300);
+            if (!goFor2) {
+                offense.teamSelectedPlay = Play.getRandomOffensivePlayByType(KICK);
+            } else {
+                if (Math.random() < 0.5)
+                    offense.teamSelectedPlay = Play.getRandomOffensivePlayByType(RUN);
+                else
+                    offense.teamSelectedPlay = Play.getRandomOffensivePlayByType(PASS);
+            }
+
+            return;
+        }
+
         // computer bullshit
         double preferPass = (offense.getPassProf() - defense.getPassDef()) / 100 + Math.random() * offense.teamStratOff.getPassPref();       //STRATEGIES
         double preferRush = (offense.getRushProf() - defense.getRushDef()) / 90 + Math.random() * offense.teamStratOff.getRunPref();
@@ -671,46 +692,57 @@ public class Game implements Serializable {
             //Down by 3 or less, or tied, and you have the ball
             if (((gamePoss && (awayScore - homeScore) <= 3) || (!gamePoss && (homeScore - awayScore) <= 3)) && gameYardLine > 60) {
                 //last second FGA
-                fieldGoalAtt(offense, defense);
+                offense.teamSelectedPlay = Play.getRandomOffensivePlayByType(KICK);
+                //fieldGoalAtt(offense, defense);
             } else {
                 //hail mary
-                setupPassingPlay(offense, defense);
+                offense.teamSelectedPlay = Play.getRandomOffensivePlayByType(PASS);
+                //setupPassingPlay(offense, defense);
             }
         } else if (gameDown >= 4) {
             if (((gamePoss && (awayScore - homeScore) > 3) || (!gamePoss && (homeScore - awayScore) > 3)) && gameTime < 300) {
                 //go for it since we need 7 to win -- This also forces going for it if down by a TD in BOT OT
                 if (gameYardsNeed < 3 && preferRush * 3 > preferPass) {
-                    setupRushingPlay(offense, defense);
+                    offense.teamSelectedPlay = Play.getRandomOffensivePlayByType(OffensivePlay.type.RUN);
+                    //setupRushingPlay(offense, defense);
                 } else {
-                    setupPassingPlay(offense, defense);
+                    offense.teamSelectedPlay = Play.getRandomOffensivePlayByType(PASS);
+                    //setupPassingPlay(offense, defense);
                 }
             } else {
                 //4th down
                 if (gameYardsNeed < 3) {
                     if (gameYardLine > 65) {
                         //fga
-                        fieldGoalAtt(offense, defense);
+                        offense.teamSelectedPlay = Play.getRandomOffensivePlayByType(KICK);
+                        //fieldGoalAtt(offense, defense);
                     } else if (gameYardLine > 55) {
                         // run play, go for it!
-                        setupRushingPlay(offense, defense);
+                        offense.teamSelectedPlay = Play.getRandomOffensivePlayByType(OffensivePlay.type.RUN);
+                        //setupRushingPlay(offense, defense);
                     } else {
                         //punt
-                        puntPlay(offense, defense);
+                        offense.teamSelectedPlay = Play.getRandomOffensivePlayByType(OffensivePlay.type.PUNT);
+                        //puntPlay(offense, defense);
                     }
                 } else if (gameYardLine > 60) {
                     //fga
-                    fieldGoalAtt(offense, defense);
+                    offense.teamSelectedPlay = Play.getRandomOffensivePlayByType(KICK);
+                    //fieldGoalAtt(offense, defense);
                 } else {
                     //punt
-                    puntPlay(offense, defense);
+                    offense.teamSelectedPlay = Play.getRandomOffensivePlayByType(OffensivePlay.type.PUNT);
+                    //puntPlay(offense, defense);
                 }
             }
         } else if ((gameDown == 3 && gameYardsNeed > 4) || ((gameDown == 1 || gameDown == 2) && (preferPass >= preferRush))) {
             // pass play
-            setupPassingPlay(offense, defense);
+            offense.teamSelectedPlay = Play.getRandomOffensivePlayByType(PASS);
+            //setupPassingPlay(offense, defense);
         } else {
             //run play
-            setupRushingPlay(offense, defense);
+            offense.teamSelectedPlay = Play.getRandomOffensivePlayByType(OffensivePlay.type.RUN);
+            //setupRushingPlay(offense, defense);
         }
     }
 
@@ -1553,26 +1585,27 @@ public class Game implements Serializable {
     public void doPAT(Team offense, Team defense) {
         PlayerK selK = offense.getK(0);
 
-        boolean autoGoFor2 = (numOT >= 3) || (((gamePoss && (awayScore - homeScore) == 2) || (!gamePoss && (homeScore - awayScore) == 2)) && gameTime < 300);
         boolean offenseChosePlay = offense.teamSelectedPlay instanceof OffensivePlay;
-        boolean offenseChosePass = offenseChosePlay
-                && ((OffensivePlay) offense.teamSelectedPlay).offPlayType == OffensivePlay.type.PASS;
-        boolean offenseChoseRun = offenseChosePlay
-                && ((OffensivePlay) offense.teamSelectedPlay).offPlayType == OffensivePlay.type.RUN;
+
+        while (!offenseChosePlay) {
+            PAT = true;
+            autoChooseOffensivePlay();
+            offenseChosePlay = offense.teamSelectedPlay instanceof OffensivePlay;
+        }
+
+        boolean offenseChosePass = ((OffensivePlay) offense.teamSelectedPlay).offPlayType == PASS;
+        boolean offenseChoseRun = ((OffensivePlay) offense.teamSelectedPlay).offPlayType == OffensivePlay.type.RUN;
         boolean offenseChoseKick = offenseChosePlay
-                && ((OffensivePlay) offense.teamSelectedPlay).offPlayType == OffensivePlay.type.KICK;
+                && ((OffensivePlay) offense.teamSelectedPlay).offPlayType == KICK;
 
         // decide whether to kick PAT or go for 2
-        if (offenseChosePass || offenseChoseRun || !offenseChosePlay && autoGoFor2) {
+        if (offenseChosePass || offenseChoseRun) {
             //go for 2
-            boolean successConversion = false;
-            boolean autoRun = Math.random() <= 0.50;
-            if (offenseChoseRun || !offenseChosePlay && autoRun) {
+            if (offenseChoseRun) {
                 //rushing
                 int blockAdv = offense.getCompositeOLRush() - defense.getCompositeDLRush();
                 int yardsGain = (int) ((offense.getRB(0).ratSpeed + blockAdv) * Math.random() / 6);
-                if (yardsGain > 5) {
-                    successConversion = true;
+                if (yardsGain > 4) {
                     if (gamePoss) { // home possession
                         homeScore += 2;
                     } else {
@@ -1587,7 +1620,6 @@ public class Game implements Serializable {
                 int pressureOnQB = defense.getCompositeDLPass() * 2 - offense.getCompositeOLPass();
                 double completion = (normalize(offense.getQB(0).ratPassAcc) + offense.getWR(0).ratCatch - defense.getCB(0).ratCoverage) / 2 + 25 - pressureOnQB / 20;
                 if (100 * Math.random() < completion) {
-                    successConversion = true;
                     if (gamePoss) { // home possession
                         homeScore += 2;
                     } else {
@@ -1690,6 +1722,8 @@ public class Game implements Serializable {
             gameTime -= timePerPlay * Math.random();
 
             kickoff = false;
+            autoChooseOffensivePlay();
+            defense.teamSelectedPlay = Play.getRandomDefensivePlay();
         }
     }
 
@@ -3126,6 +3160,12 @@ public class Game implements Serializable {
                         homeTeam.teamStratOff.getStratName() + " offense.");
             }
         }
+    }
+
+    public void adjustYardsGoalToGo() {
+        // If it's 1st and Goal to go, adjust yards needed to reflect distance for a TD so that play selection reflects actual yards to go
+        // If we don't do this, gameYardsNeed may be higher than the actually distance for a TD and suboptimal plays may be chosen
+        if (gameDown == 1 && gameYardLine >= 91) gameYardsNeed = 100 - gameYardLine;
     }
 
     private int normalize(int rating) {

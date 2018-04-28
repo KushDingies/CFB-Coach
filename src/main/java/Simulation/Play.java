@@ -82,6 +82,16 @@ public class Play {
         ArrayList<Play> plays = new ArrayList<Play>();
         plays.add(getAutoPlay());
 
+        for (OffensivePlay op : getOffensivePlaysNoAuto()) {
+            plays.add(op);
+        }
+
+        return plays;
+    }
+
+    public static ArrayList<OffensivePlay> getOffensivePlaysNoAuto() {
+        ArrayList<OffensivePlay> plays = new ArrayList<OffensivePlay>();
+
         OffensivePlay insideRun = new OffensivePlay("Inside run", "A conservative run up the middle.", OffensivePlay.type.RUN);
         insideRun.runBlocking = 2;
         insideRun.runPotential = -1;
@@ -113,9 +123,36 @@ public class Play {
         return plays;
     }
 
+    public static ArrayList<OffensivePlay> getOffensivePlaysByType(OffensivePlay.type t) {
+        ArrayList<OffensivePlay> plays = new ArrayList<OffensivePlay>();
+
+        for (OffensivePlay op : getOffensivePlaysNoAuto()) {
+            if (op.offPlayType == t)
+                plays.add(op);
+        }
+
+        return plays;
+    }
+
+    public static OffensivePlay getRandomOffensivePlayByType(OffensivePlay.type t) {
+        ArrayList<OffensivePlay> possiblePlays = getOffensivePlaysByType(t);
+        int playIndex = (int)(Math.random() * possiblePlays.size());
+        return possiblePlays.get(playIndex);
+    }
+
     public static ArrayList<Play> getDefensivePlays() {
         ArrayList<Play> plays = new ArrayList<Play>();
         plays.add(getAutoPlay());
+
+        for (DefensivePlay dp : getDefensivePlaysNoAuto()) {
+            plays.add(dp);
+        }
+
+        return plays;
+    }
+
+    public static ArrayList<DefensivePlay> getDefensivePlaysNoAuto() {
+        ArrayList<DefensivePlay> plays = new ArrayList<DefensivePlay>();
 
         plays.add(new DefensivePlay("Balanced", "A nice balanced defense.", DefensivePlay.expect.BALANCED));
 
@@ -147,6 +184,12 @@ public class Play {
         plays.add(blitz);
 
         return plays;
+    }
+
+    public static DefensivePlay getRandomDefensivePlay() {
+        ArrayList<DefensivePlay> possiblePlays = getDefensivePlaysNoAuto();
+        int playIndex = (int)(Math.random() * possiblePlays.size());
+        return possiblePlays.get(playIndex);
     }
 
     public static Play getAutoPlay() {

@@ -375,6 +375,21 @@ public class Team {
 
     }
 
+    public void selectPlay(Game g) {
+        if (g.getOffense() == this) {
+//            ArrayList<OffensivePlay> possiblePlays = Play.getOffensivePlaysNoAuto();
+//            int playIndex = (int)(Math.random() * possiblePlays.size());
+//            teamSelectedPlay = possiblePlays.get(playIndex);
+
+
+        }
+        else {
+            ArrayList<DefensivePlay> possiblePlays = Play.getDefensivePlaysNoAuto();
+            int playIndex = (int)(Math.random() * possiblePlays.size());
+            teamSelectedPlay = possiblePlays.get(playIndex);
+        }
+    }
+
     private void commonInitializer() {
         userControlled = false;
         showPopups = true;
