@@ -126,7 +126,7 @@ public class Game implements Serializable {
     private boolean bottomOT;
     public boolean kickoff, PAT;
     public boolean suppressPlaySelect() {
-        return kickoff || gameTime % 900 == 0 || hasPlayed;
+        return kickoff || hasPlayed || gameTime <= 2700 && !QT1 || gameTime <= 900 && !QT3;
     }
 
     private final int timePerPlay = 22; //affects snaps per game!
@@ -430,6 +430,7 @@ public class Game implements Serializable {
         if (alwaysLog || homeTeam.league.fullGameLog)
             gameEventLog += playInfo + playSummary;
         lastPlayLog += playFeedback + playSummary;
+        playFeedback = "";
     }
 
     private void gameLog(String playInfo, String playSummary) {
@@ -444,10 +445,6 @@ public class Game implements Serializable {
         gameLog("", playSummary);
     }
 
-    private void gameLogNewDown(String s) {
-        lastPlayLog += s;
-    }
-
     public void afterPlay() {
 
         // Check for turnover on downs
@@ -455,7 +452,7 @@ public class Game implements Serializable {
 
             if (!playingOT) {
                 //Log the turnover on downs, reset down and distance, give possession to the defense, exit this runPlay()
-                gameLog(playInfo, "TURNOVER ON DOWNS!\n" + getOffense().abbr + " failed to convert on " + (gameDown - 1) + "th down. " + getDefense().abbr + " takes over possession on downs.", true);
+                gameLog(playInfo, "\nTURNOVER ON DOWNS!\n" + getOffense().abbr + " failed to convert on " + (gameDown - 1) + "th down. " + getDefense().abbr + " takes over possession on downs.", true);
 
                 //Turn over on downs, change possession, set to first down and 10 yards to go
                 gamePoss = !gamePoss;
@@ -466,7 +463,7 @@ public class Game implements Serializable {
 
             } else {
                 //OT is over for the offense, log the turnover on downs, run resetForOT().
-                gameLog(playInfo, "TURNOVER ON DOWNS!\n" + getOffense().abbr + " failed to convert on " + (gameDown - 1) + "th down in OT and their possession is over.", true);
+                gameLog(playInfo, "\nTURNOVER ON DOWNS!\n" + getOffense().abbr + " failed to convert on " + (gameDown - 1) + "th down in OT and their possession is over.", true);
                 resetForOT();
 
             }
@@ -1347,7 +1344,7 @@ public class Game implements Serializable {
                         // Only set new down and distance if there wasn't a TD
                         gameDown = 1;
                         gameYardsNeed = 10;
-                        gameLogNewDown("\nFIRST DOWN!");
+                        gameLog("\nFIRST DOWN!");
 
                     } else gameDown++;
                 }
@@ -1475,7 +1472,7 @@ public class Game implements Serializable {
                 // Only set new down and distance if there wasn't a TD
                 gameDown = 1;
                 gameYardsNeed = 10;
-                gameLogNewDown("\nFIRST DOWN!");
+                gameLog("\nFIRST DOWN!");
             } else gameDown++;
         }
 
