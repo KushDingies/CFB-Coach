@@ -1751,7 +1751,7 @@ public class Game implements Serializable {
 
         //Kicker kicks the ball
         if (kickoff) yards = startYards - (kicker.ratKickPow / 2) - (int) (25 * Math.random());
-        else yards = startYards - (kicker.ratKickPow - (25 + (int) (20 * Math.random())));
+        else yards = startYards - (kicker.ratKickPow - (45 + (int) (20 * Math.random())));
 
         if (yards < -3) {
             //touchback
