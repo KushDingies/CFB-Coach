@@ -1526,6 +1526,10 @@ public class MainActivity extends AppCompatActivity {
         prevPlayText.setText(g.lastPlayLog);
         playResultText.setText("\nIt is now " + g.getEventLog().replace("\n", ""));
 
+        // hide play stuff for opening kickoff
+        selectedPlayText.setVisibility(View.GONE);
+        changePlayButton.setVisibility(View.GONE);
+
         final Button runPlayButton = dialog.findViewById(R.id.buttonRunNextPlay);
         runPlayButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -1571,8 +1575,14 @@ public class MainActivity extends AppCompatActivity {
                     else
                         winningTeam += g.awayTeam.name;
                     playResultText.setText(winningTeam + " wins!");
+                }
+
+                if (g.suppressPlaySelect()) {
                     selectedPlayText.setVisibility(View.GONE);
                     changePlayButton.setVisibility(View.GONE);
+                } else {
+                    selectedPlayText.setVisibility(View.VISIBLE);
+                    changePlayButton.setVisibility(View.VISIBLE);
                 }
             }
         });

@@ -124,6 +124,9 @@ public class Game implements Serializable {
     public boolean playingOT;
     private boolean bottomOT;
     public boolean kickoff, PAT;
+    public boolean suppressPlaySelect() {
+        return kickoff || gameTime % 900 == 0 || hasPlayed;
+    }
 
     private final int timePerPlay = 22; //affects snaps per game!
     private final int intValue = 150; //higher less ints
@@ -1566,15 +1569,20 @@ public class Game implements Serializable {
         // No XP/2pt try if the TD puts the bottom OT offense ahead (aka wins the game)
         if (playingOT && bottomOT && (((numOT % 2 == 0) && awayScore > homeScore) || ((numOT % 2 != 0) && homeScore > awayScore))) {
             gameLog(getEventLogScoring(), "TOUCHDOWN!\n" + tdInfo + "\n" + offense.abbr + " wins on a walk-off touchdown!", true);
+            PAT = false;
             return;
         }
         // If a TD is scored as time expires, there is no XP/2pt if the score difference is greater than 2
         if (!playingOT && gameTime <= 0 && ((homeScore - awayScore > 2) || (awayScore - homeScore > 2))) {
             //Walkoff TD!
-            if ((Math.abs(homeScore - awayScore) < 7) && ((gamePoss && homeScore > awayScore) || (!gamePoss && awayScore > homeScore)))
+            if ((Math.abs(homeScore - awayScore) < 7) && ((gamePoss && homeScore > awayScore) || (!gamePoss && awayScore > homeScore))) {
                 gameLog(getEventLogScoring(), "TOUCHDOWN!\n" + tdInfo + "\n" + offense.abbr + " wins on a walk-off touchdown!", true);
+                PAT = false;
                 //Just rubbing in the win or saving some pride
-            else gameLog(getEventLogScoring(), "TOUCHDOWN!\n" + tdInfo, true);
+            } else {
+                gameLog(getEventLogScoring(), "TOUCHDOWN!\n" + tdInfo, true);
+                PAT = true;
+            }
 
             return;
         }
