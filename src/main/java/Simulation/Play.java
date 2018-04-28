@@ -93,6 +93,7 @@ public class Play {
         plays.add(outsideRun);
 
         OffensivePlay shortPass = new OffensivePlay("Short pass", "A conservative pass with a higher completion percentage.", OffensivePlay.type.PASS);
+        shortPass.passBlocking = 1;
         shortPass.catchMod = 2;
         shortPass.passPotential = -1;
         plays.add(shortPass);
