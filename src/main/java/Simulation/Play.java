@@ -10,6 +10,8 @@ public class Play {
     public int catchMod; // affects receiver drop chance
     public int intMod; // affects interception chance
     public int sackMod; // affects QB sack chance
+    public int kickBlockMod;
+    public int kickReturnMod;
 
     final static int scale = 2;
 
@@ -74,6 +76,18 @@ public class Play {
             if (sackMod > 0)
                 fullDesc += "+";
             fullDesc += sackMod + " sack modifier";
+        }
+        if (kickBlockMod != 0) {
+            fullDesc += "\n";
+            if (kickBlockMod > 0)
+                fullDesc += "+";
+            fullDesc += kickBlockMod + " to kick blocking";
+        }
+        if (kickReturnMod != 0) {
+            fullDesc += "\n";
+            if (kickReturnMod > 0)
+                fullDesc += "+";
+            fullDesc += kickReturnMod + " to kick return";
         }
 
 
@@ -185,11 +199,67 @@ public class Play {
         blitz.intMod = 3 * scale;
         plays.add(blitz);
 
+        DefensivePlay puntReturn = new DefensivePlay("Punt return", "Put a man deep to return a punt.", DefensivePlay.expect.PUNT_RETURN);
+        puntReturn.runStopping = -4 * scale;
+        puntReturn.passRush = -4 * scale;
+        puntReturn.runPotential = 3;
+        puntReturn.passPotential = 3;
+        puntReturn.sackMod = -4 * scale;
+        puntReturn.kickReturnMod = 20;
+        plays.add(puntReturn);
+
+        DefensivePlay blockKick = new DefensivePlay("Block kick", "Try to block a punt or a field goal.", DefensivePlay.expect.KICK_BLOCK);
+        blockKick.runPotential = 3;
+        blockKick.passPotential = 3;
+        blockKick.kickBlockMod = 5;
+        plays.add(blockKick);
+
         return plays;
     }
 
     public static DefensivePlay getRandomDefensivePlay() {
         ArrayList<DefensivePlay> possiblePlays = getDefensivePlaysNoAuto();
+        int playIndex = (int)(Math.random() * possiblePlays.size());
+        return possiblePlays.get(playIndex);
+    }
+
+    public static ArrayList<DefensivePlay> getDefensivePlaysByType(DefensivePlay.expect t) {
+        ArrayList<DefensivePlay> plays = new ArrayList<>();
+
+        for (DefensivePlay dp : getDefensivePlaysNoAuto()) {
+            if (dp.defPlayType == t)
+                plays.add(dp);
+        }
+
+        return plays;
+    }
+
+    public static DefensivePlay getRandomDefensivePlayByType(DefensivePlay.expect t) {
+        ArrayList<DefensivePlay> possiblePlays = getDefensivePlaysByType(t);
+        int playIndex = (int)(Math.random() * possiblePlays.size());
+        return possiblePlays.get(playIndex);
+    }
+
+    public static DefensivePlay getRandomDefensivePlayNoSpecialTeams() {
+        ArrayList<DefensivePlay> possiblePlays = new ArrayList<DefensivePlay>();
+
+        for (DefensivePlay dp : getDefensivePlaysNoAuto()) {
+            if (dp.defPlayType != DefensivePlay.expect.KICK_BLOCK && dp.defPlayType != DefensivePlay.expect.PUNT_RETURN)
+                possiblePlays.add(dp);
+        }
+
+        int playIndex = (int)(Math.random() * possiblePlays.size());
+        return possiblePlays.get(playIndex);
+    }
+
+    public static DefensivePlay getRandomDefensivePlayOnlySpecialTeams() {
+        ArrayList<DefensivePlay> possiblePlays = new ArrayList<DefensivePlay>();
+
+        for (DefensivePlay dp : getDefensivePlaysNoAuto()) {
+            if (dp.defPlayType == DefensivePlay.expect.KICK_BLOCK || dp.defPlayType == DefensivePlay.expect.PUNT_RETURN)
+                possiblePlays.add(dp);
+        }
+
         int playIndex = (int)(Math.random() * possiblePlays.size());
         return possiblePlays.get(playIndex);
     }

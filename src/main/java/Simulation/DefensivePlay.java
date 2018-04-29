@@ -4,10 +4,10 @@ public class DefensivePlay extends Play {
 
     public DefensivePlay(String name, String description, expect e) {
         super(name, description);
-        defPlayExpect = e;
+        defPlayType = e;
     }
 
-    public enum expect { RUN, PASS, BALANCED }
+    public enum expect { RUN, PASS, BALANCED, PUNT_RETURN, KICK_BLOCK }
 
-    public expect defPlayExpect;
+    public expect defPlayType;
 }

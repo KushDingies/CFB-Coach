@@ -191,16 +191,27 @@ public class Game implements Serializable {
     }
 
     private int getHFadv() {
-        //home field advantage
+        //home field advantage - if this is higher, offense is helped.
         int footIQadv = (homeTeam.getCompositeFootIQ() - awayTeam.getCompositeFootIQ()) / 5;
         if (footIQadv > 3) footIQadv = 3;
         if (footIQadv < -3) footIQadv = -3;
         if (gameName.contains("Bowl") || gameName.contains("NC") || gameName.contains("SF"))
             return 0;
+        int hfAdv = 0;
         if (gamePoss) {
-            return 3 + footIQadv;
+            hfAdv = 3 + footIQadv;
         } else {
-            return -footIQadv;
+            hfAdv = - 3 - footIQadv;
+        }
+
+        return hfAdv;
+    }
+
+    private void printHFadv() {
+        int hfadv = getHFadv();
+
+        if (hfadv < -4) {
+            gameLog("The crowd is deafening!\n");
         }
     }
 
@@ -472,7 +483,7 @@ public class Game implements Serializable {
 
 
         autoChooseOffensivePlay();
-        getDefense().teamSelectedPlay = Play.getRandomDefensivePlay();
+        autoChooseDefensivePlay();
 
     }
 
@@ -629,6 +640,10 @@ public class Game implements Serializable {
 
         playInfo = getEventLog();
 
+        if (gameDown == 3) {
+            printHFadv();
+        }
+
         if (quarterCheck())
             return;
         recoup(false, 0);
@@ -740,6 +755,18 @@ public class Game implements Serializable {
         } else {
             //run play
             offense.teamSelectedPlay = Play.getRandomOffensivePlayByType(OffensivePlay.type.RUN);
+        }
+    }
+
+    private void autoChooseDefensivePlay() {
+
+        if (gameDown < 4) {
+            getDefense().teamSelectedPlay = Play.getRandomDefensivePlayNoSpecialTeams();
+        } else {
+            if (gameYardLine > 65)
+                getDefense().teamSelectedPlay = Play.getRandomDefensivePlayByType(DefensivePlay.expect.KICK_BLOCK);
+            else
+                getDefense().teamSelectedPlay = Play.getRandomDefensivePlayOnlySpecialTeams();
         }
     }
 
@@ -1086,9 +1113,9 @@ public class Game implements Serializable {
         boolean gotFumble = false;
 
         if (defense.teamSelectedPlay instanceof DefensivePlay) {
-            if (((DefensivePlay) defense.teamSelectedPlay).defPlayExpect == DefensivePlay.expect.PASS)
+            if (((DefensivePlay) defense.teamSelectedPlay).defPlayType == DefensivePlay.expect.PASS)
                 playDetails += "The defense was ready for the pass!\n";
-            else if (((DefensivePlay) defense.teamSelectedPlay).defPlayExpect == DefensivePlay.expect.RUN)
+            else if (((DefensivePlay) defense.teamSelectedPlay).defPlayType == DefensivePlay.expect.RUN)
                 playDetails += "The defense was expecting a run!\n";
         }
 
@@ -1420,9 +1447,9 @@ public class Game implements Serializable {
         int blockAdvOutside = selTE.ratRunBlock * 2 - selLB.ratRunStop - selS.ratRunStop + (offense.teamStratDef.getRunProtection() - defense.teamStratDef.getRunProtection()  + offense.teamSelectedPlay.runBlocking - defense.teamSelectedPlay.runStopping);
 
         if (defense.teamSelectedPlay instanceof DefensivePlay) {
-            if (((DefensivePlay) defense.teamSelectedPlay).defPlayExpect == DefensivePlay.expect.RUN)
+            if (((DefensivePlay) defense.teamSelectedPlay).defPlayType == DefensivePlay.expect.RUN)
                 playDetails += "The defense was ready for the run!\n";
-            if (((DefensivePlay) defense.teamSelectedPlay).defPlayExpect == DefensivePlay.expect.PASS)
+            if (((DefensivePlay) defense.teamSelectedPlay).defPlayType == DefensivePlay.expect.PASS)
                 playDetails += "The defense was expecting a pass!\n";
         }
 
@@ -1523,77 +1550,62 @@ public class Game implements Serializable {
         PlayerK selK = offense.getK(0);
         gameYardLine -= 7;
 
+        printHFadv();
+
+        // chance for block
+        Play defensePlay = getDefense().teamSelectedPlay;
+        int blockChance = defensePlay.kickBlockMod + (getDefense().getCompositeDLRush() - getOffense().getCompositeOLRush()) - getHFadv();
+        boolean blocked = Math.random() * 100 <= blockChance;
+
+        boolean kOvercomesPressure = offense.getK(0).ratPressure > Math.random() * 95;
+        boolean noPressure = gameTime > 120 || playingOT == false;
+        if (!noPressure && !kOvercomesPressure) {
+            gameLog(offense.abbr + " K " + selK.name + " succumbed to the pressure! ");
+        }
 
         double fgDistRatio = Math.pow((110 - gameYardLine) / 50, 2);
         double fgAccRatio = Math.pow((110 - gameYardLine) / 50, 1.25);
         double fgDistChance = (getHFadv() + offense.getK(0).ratKickPow - fgDistRatio * 80);
         double fgAccChance = (getHFadv() + offense.getK(0).ratKickAcc - fgAccRatio * 80);
 
-        if (gameTime > 120 || playingOT == false) {
-            if (fgDistChance > 20 && fgAccChance * Math.random() > 15) {
-                // made the fg
-                if (gamePoss) { // home possession
-                    homeScore += 3;
-                } else {
-                    awayScore += 3;
-                }
-                gameLog(getEventLogScoring(), offense.abbr + " K " + offense.getK(0).name + " made the " + (110 - gameYardLine) + " yard FG.", true);
-                addPointsQuarter(3);
-
-                selK.statsFGMade++;
-                selK.statsFGAtt++;
-                selK.gameFGMade++;
-                selK.gameFGAttempts++;
-
-                if (!playingOT) kickoff = true;
-                else resetForOT();
-
+        if (!blocked && fgDistChance > 20 && fgAccChance * Math.random() > 15 && (noPressure || kOvercomesPressure)) {
+            // made the fg
+            if (gamePoss) { // home possession
+                homeScore += 3;
             } else {
-                //miss
-                gameLog(playInfo, offense.abbr + " K " + offense.getK(0).name + " missed the " + (110 - gameYardLine) + " yard FG.", true);
-                selK.statsFGAtt++;
-                selK.gameFGAttempts++;
-                if (!playingOT) {
-                    gameYardLine = Math.max(100 - gameYardLine, 20); //Misses inside the 20 = defense takes over on the 20
-                    gameDown = 1;
-                    gameYardsNeed = 10;
-                    if (gamePoss) { // home possession
-                    } else {
-                    }
-                    gamePoss = !gamePoss;
-                } else resetForOT();
+                awayScore += 3;
             }
+            gameLog(getEventLogScoring(), offense.abbr + " K " + offense.getK(0).name + " made the " + (110 - gameYardLine) + " yard FG.", true);
+            addPointsQuarter(3);
+
+            selK.statsFGMade++;
+            selK.statsFGAtt++;
+            selK.gameFGMade++;
+            selK.gameFGAttempts++;
+
+            if (!playingOT) kickoff = true;
+            else resetForOT();
+
         } else {
-            if (fgDistChance > 20 && fgAccChance * Math.random() > 15 && offense.getK(0).ratPressure > Math.random() * 95) {
-                // made the fg
+            //miss
+            if (blocked)
+                gameLog(playInfo, offense.abbr + " K " + selK.name + "'s field goal was blocked!", true);
+            else
+                gameLog(playInfo, offense.abbr + " K " + selK.name + " missed the " + (110 - gameYardLine) + " yard FG.", true);
+            selK.statsFGAtt++;
+            selK.gameFGAttempts++;
+            if (!playingOT) {
+                gameYardLine = Math.max(100 - gameYardLine, 20); //Misses inside the 20 = defense takes over on the 20
+                gameDown = 1;
+                gameYardsNeed = 10;
                 if (gamePoss) { // home possession
-                    homeScore += 3;
                 } else {
-                    awayScore += 3;
                 }
-                gameLog(getEventLogScoring(), offense.abbr + " K " + offense.getK(0).name + " made the " + (110 - gameYardLine) + " yard FG.", true);
-                addPointsQuarter(3);
-                selK.statsFGMade++;
-                selK.statsFGAtt++;
-                selK.gameFGMade++;
-                selK.gameFGAttempts++;
-
-                if (!playingOT) kickoff = true;
-                else resetForOT();
-
-            } else {
-                //miss
-                gameLog(playInfo, offense.abbr + " K " + offense.getK(0).name + " missed the " + (110 - gameYardLine) + " yard FG.", true);
-                offense.getK(0).statsFGAtt++;
-                if (!playingOT) {
-                    gameYardLine = Math.max(100 - gameYardLine, 20); //Misses inside the 20 = defense takes over on the 20
-                    gameDown = 1;
-                    gameYardsNeed = 10;
-                    selK.gameFGAttempts++;
-                    gamePoss = !gamePoss;
-                } else resetForOT();
-            }
+                gamePoss = !gamePoss;
+            } else resetForOT();
         }
+
+
 
         gameTime -= 20;
 
@@ -1838,27 +1850,38 @@ public class Game implements Serializable {
         PlayerReturner returner = selectReturner();
         int specialTeams = getSpecialTeamsD(offense);
 
-        gameYardLine = returnPlay(gameYardLine, offense.getK(0), returner, specialTeams, false);
-        gamePoss = !gamePoss;
-
-        //Touchdown...
-        if (gameYardLine >= 100) {
-            addPointsQuarter(6);
-            if (gamePoss) { // home possession
-                homeScore += 6;
-            } else {
-                awayScore += 6;
-            }
-            tdInfo = returner.team + " " + returner.position + " " + returner.name + " returns the punt " + returnYards + " yards for a TOUCHDOWN!";
-            gameLog(getEventLogScoring(), tdInfo, true);
-            returner.pTD++;
-            checkForPAT(defense, offense);
+        // chance for block
+        Play defensePlay = getDefense().teamSelectedPlay;
+        int blockChance = defensePlay.kickBlockMod + (getDefense().getCompositeDLRush() - getOffense().getCompositeOLRush()) - getHFadv();
+        if (Math.random() * 100 <= blockChance) {
+            // blocked!
+            gameLog(offense.abbr + " K " + offense.getK(0).name + "'s punt was blocked!");
+            gameYardLine = 100 - gameYardLine;
+            gamePoss = !gamePoss;
         } else {
-            if (gameYardLine <= 0) {
-                gameYardLine = touchback;
-                gameLog("Punt!\n" + returner.team + " " + returner.name + " lets it go for a touchback.");
+
+            gameYardLine = returnPlay(gameYardLine, offense.getK(0), returner, specialTeams, false);
+            gamePoss = !gamePoss;
+
+            //Touchdown...
+            if (gameYardLine >= 100) {
+                addPointsQuarter(6);
+                if (gamePoss) { // home possession
+                    homeScore += 6;
+                } else {
+                    awayScore += 6;
+                }
+                tdInfo = returner.team + " " + returner.position + " " + returner.name + " returns the punt " + returnYards + " yards for a TOUCHDOWN!";
+                gameLog(getEventLogScoring(), tdInfo, true);
+                returner.pTD++;
+                checkForPAT(defense, offense);
             } else {
-                gameLog("Punt!\n" + returner.team + " " + returner.name + " returns the punt to the " + gameYardLine + " yard line.");
+                if (gameYardLine <= 0) {
+                    gameYardLine = touchback;
+                    gameLog("Punt!\n" + returner.team + " " + returner.name + " lets it go for a touchback.");
+                } else {
+                    gameLog("Punt!\n" + returner.team + " " + returner.name + " returns the punt to the " + gameYardLine + " yard line.");
+                }
             }
         }
 
@@ -1874,7 +1897,10 @@ public class Game implements Serializable {
 
     private int returnPlay(int startYards, PlayerK kicker, PlayerReturner returner, int ST, boolean kickoff) {
         int yards;
-        returnYards = 0;
+        if (kickoff)
+            returnYards = 20;
+        else
+            returnYards = (int)(Math.random() * 0.5 + 0.5) * getDefense().teamSelectedPlay.kickReturnMod;
 
         //Kicker kicks the ball
         if (kickoff) yards = startYards - (kicker.ratKickPow / 2) - (int) (25 * Math.random());
@@ -1891,9 +1917,9 @@ public class Game implements Serializable {
 
             //Returner tackled by playerST?
             if (def >= ret) returnYards = (int) (Math.random() * 10) + 1;
-            else if (ret > def + 80) returnYards += 100 - yards;
-            else if (ret > def + 50) returnYards = (int) Math.random() * 40 + 30;
-            else if (ret > def + 35) returnYards = (int) Math.random() * 20 + 20;
+            else if (ret > def + 80) returnYards += 100 - yards; // return touchdown
+            else if (ret > def + 50) returnYards += (int) Math.random() * 40 + 10;
+            else if (ret > def + 35) returnYards += (int) Math.random() * 20;
             else returnYards = ret - def;
 
             if (kickoff) {
