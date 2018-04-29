@@ -126,7 +126,7 @@ public class Game implements Serializable {
     private boolean bottomOT;
     public boolean kickoff, PAT;
     public boolean suppressPlaySelect() {
-        return kickoff || hasPlayed || gameTime <= 2700 && !QT1
+        return !gameIsInProgress() || kickoff || gameTime <= 2700 && !QT1
                 || gameTime <= 1800 && !QT2 || gameTime <= 900 && !QT3;
     }
 
