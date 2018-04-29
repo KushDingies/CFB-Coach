@@ -126,8 +126,8 @@ public class Game implements Serializable {
     private boolean bottomOT;
     public boolean kickoff, PAT;
     public boolean suppressPlaySelect() {
-        return !gameIsInProgress() || kickoff || gameTime <= 2700 && !QT1
-                || gameTime <= 1800 && !QT2 || gameTime <= 900 && !QT3;
+        return !PAT && (!gameIsInProgress() || kickoff || gameTime <= 2700 && !QT1
+                || gameTime <= 1800 && !QT2 || gameTime <= 900 && !QT3);
     }
 
     private final int timePerPlay = 22; //affects snaps per game!
@@ -762,6 +762,11 @@ public class Game implements Serializable {
     }
 
     private void autoChooseDefensivePlay() {
+
+        if (PAT) {
+            getDefense().teamSelectedPlay = Play.getRandomDefensivePlayByType(DefensivePlay.expect.KICK_BLOCK);
+            return;
+        }
 
         if (gameDown < 4) {
             getDefense().teamSelectedPlay = Play.getRandomDefensivePlayNoSpecialTeams();
