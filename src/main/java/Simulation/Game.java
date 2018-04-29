@@ -210,9 +210,12 @@ public class Game implements Serializable {
     private void printHFadv() {
         int hfadv = getHFadv();
 
-        if (hfadv < -4) {
+        if (hfadv < -4)
             gameLog("The crowd is deafening!\n");
-        }
+        else if (hfadv > 0)
+            gameLog("The crowd is silent.\n");
+        else
+            gameLog("The crowd is making noise!\n");
     }
 
     private int coachAdv() {
