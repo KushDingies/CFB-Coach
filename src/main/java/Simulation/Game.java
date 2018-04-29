@@ -427,7 +427,7 @@ public class Game implements Serializable {
     }
 
     private void gameLog(String playInfo, String playSummary, boolean alwaysLog) {
-        //Log.i("Game.java gameLog", playInfo + "|" + playSummary);
+        Log.i("Game.java gameLog", playInfo + "|" + playSummary);
         if (alwaysLog || homeTeam.league.fullGameLog)
             gameEventLog += playInfo + playSummary;
         lastPlayLog += playDetails + playSummary;
@@ -1282,7 +1282,7 @@ public class Game implements Serializable {
 
                 //BIG GAIN
                 if (escapeChance > 92 || Math.random() > 0.95) {
-                    playDetails += "The receiver broke away for a big gain!\n";
+                    playDetails += "The receiver evaded a tackle!\n";
                     if (pos.equals("WR")) {
                         yardsGain += 3 + (selWR.ratSpeed * Math.random() / 4);
                     } else if (pos.equals("TE")) {
@@ -1295,7 +1295,7 @@ public class Game implements Serializable {
                 //BREAK AWAY FOR TD
                 if (escapeChance > 80 && Math.random() < (0.1 + (offense.teamStratOff.getPassPotential() - defense.teamStratDef.getPassPotential()
                         + offense.teamSelectedPlay.passPotential + defense.teamSelectedPlay.passPotential) / 200)) {
-                    playDetails += "The receiver broke away and took it all the way to the endzone!\n";
+                    playDetails += "Busted coverage! Nobody's stopping him now!\n";
                     yardsGain += 100;
                 }
 
@@ -1440,8 +1440,8 @@ public class Game implements Serializable {
             } else {
                 //break free from tackles
                 if (Math.random() < (0.28 + (offense.teamStratOff.getRunPotential() + offense.teamSelectedPlay.runPotential + ((double) defense.teamSelectedPlay.runPotential - defense.teamStratDef.getRunPotential()) / 2) / 50)) {
-                    playDetails += "The running back broke away for a big gain!\n";
-                    yardsGain += (selRB.ratEvasion - blockAdvOutside) / 5 * Math.random();
+                    playDetails += "The running back broke a tackle!\n";
+                    yardsGain += (selRB.ratEvasion + blockAdvOutside) / 5 * Math.random();
                 }
             }
         } else {
@@ -1450,8 +1450,8 @@ public class Game implements Serializable {
             } else {
                 //break free from tackles
                 if (Math.random() < (0.20 + (offense.teamStratOff.getRunPotential() + offense.teamSelectedPlay.runPotential + ((double) defense.teamSelectedPlay.runPotential - defense.teamStratDef.getRunPotential()) / 2) / 50)) {
-                    playDetails += "The quarterback broke away for a big gain!\n";
-                    yardsGain += (selQB.ratEvasion - blockAdvOutside) / 5 * Math.random();
+                    playDetails += "The quarterback broke a tackle!\n";
+                    yardsGain += (selQB.ratEvasion + blockAdvOutside) / 5 * Math.random();
                 }
             }
         }
@@ -1749,6 +1749,7 @@ public class Game implements Serializable {
                         awayScore += 6;
                     }
                     tdInfo = returner.team + " " + returner.position + " " + returner.name + " returns the kick " + returnYards + " yards for a TOUCHDOWN!";
+                    gameLog(getEventLogScoring(), tdInfo, true);
                     returner.kTD++;
                     checkForPAT(defense, offense);
                 } else {
@@ -1849,6 +1850,7 @@ public class Game implements Serializable {
                 awayScore += 6;
             }
             tdInfo = returner.team + " " + returner.position + " " + returner.name + " returns the punt " + returnYards + " yards for a TOUCHDOWN!";
+            gameLog(getEventLogScoring(), tdInfo, true);
             returner.pTD++;
             checkForPAT(defense, offense);
         } else {
