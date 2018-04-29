@@ -1912,7 +1912,18 @@ public class Game implements Serializable {
         } else {
             //Returner receives ball and runs at defense
 
-            int ret = (int) (returner.ratSpeed * Math.random());
+            double speedMod, evasionMod;
+            if (kickoff) {
+                // in a kickoff, raw speed is the most important
+                speedMod = .9;
+                evasionMod = .1;
+            } else {
+                // for punts, evasion plays more of a role
+                speedMod = .55;
+                evasionMod = .45;
+            }
+
+            int ret = (int) ((returner.ratSpeed * speedMod + returner.ratEvasion * evasionMod) * Math.random());
             int def = (int) (ST * Math.random());
 
             //Returner tackled by playerST?
