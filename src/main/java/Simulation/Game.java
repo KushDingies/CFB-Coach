@@ -111,6 +111,7 @@ public class Game implements Serializable {
     public boolean regulationIsOver() { return gameTime <= 0; }
     public boolean gameIsInProgress() { return gameTime < 3600 && !hasPlayed; }
     private boolean gamePoss; //1 if home is offense, 0 if away
+    public boolean getGamePoss() { return gamePoss; }
     public boolean TeamIsOffense(Team team) {
         if (!containsTeam(team))
                 throw new InputMismatchException();

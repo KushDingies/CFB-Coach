@@ -1504,6 +1504,8 @@ public class MainActivity extends AppCompatActivity {
         final TextView playStatusText = dialog.findViewById(R.id.ingameDialogPlayStatus);
         final TextView prevPlayText = dialog.findViewById(R.id.ingameDialogPreviousPlay);
         final TextView playResultText = dialog.findViewById(R.id.ingameDialogPlayResult);
+        final TextView homePoss = dialog.findViewById(R.id.ingameDialogScoreHomePoss);
+        final TextView awayPoss = dialog.findViewById(R.id.ingameDialogScoreAwayPoss);
 
         final TextView selectedPlayText = dialog.findViewById(R.id.ingameDialogSelectedPlay);
         if (userTeam.teamSelectedPlay != null) {
@@ -1546,6 +1548,13 @@ public class MainActivity extends AppCompatActivity {
 
                 awayTeamScoreText.setText(Integer.toString(g.awayScore));
                 homeTeamScoreText.setText(Integer.toString(g.homeScore));
+                if (g.getGamePoss()) {
+                    homePoss.setText("<>");
+                    awayPoss.setText("");
+                } else {
+                    homePoss.setText("");
+                    awayPoss.setText("<>");
+                }
 
                 if (g.regulationIsOver()) {
                     if (g.playingOT) {
@@ -1563,7 +1572,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
 
-                //playStatusText.setText(g.playInfo);
                 prevPlayText.setText(g.lastPlayLog);
                 playResultText.setText("\nIt is now " + g.getEventLog().replace("\n", ""));
                 selectedPlayText.setText(userTeam.teamSelectedPlay.name);
