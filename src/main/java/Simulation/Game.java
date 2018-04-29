@@ -1268,8 +1268,8 @@ public class Game implements Serializable {
 
                 if (compCheck * -1 < defense.teamSelectedPlay.passRush)
                     playDetails += "A good defensive playcall led to an incompletion.\n";
-                if (compCheck > offense.teamSelectedPlay.passBlocking)
-                    //playDetails += "A poor offensive playcall led to an incompletion.\n";
+//                if (compCheck > offense.teamSelectedPlay.passBlocking)
+//                    playDetails += "A poor offensive playcall led to an incompletion.\n";
 
                 //no completion, advance downs
                 gameLog(playInfo, offense.abbr + " QB " + selQB.name + " threw an incomplete pass to the " + pos + ".");
