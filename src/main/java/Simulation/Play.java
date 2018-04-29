@@ -13,11 +13,36 @@ public class Play {
     public int kickBlockMod;
     public int kickReturnMod;
 
+    private ArrayList<String> hintStrings;
+    private ArrayList<Integer> hintWeights;
+    private int hintWeightsTotal;
+
     final static int scale = 2;
 
     protected Play(String n, String d) {
         name = n;
         description = d;
+
+        hintStrings = new ArrayList<>();
+        hintWeights = new ArrayList<>();
+        hintWeightsTotal = 0;
+    }
+
+    protected void addHintString(String hint, int weight) {
+        hintStrings.add(hint);
+        hintWeights.add(weight);
+        hintWeightsTotal += weight;
+    }
+
+    public String getRandomHintString() {
+        int hintRoll = (int)Math.random() * hintWeightsTotal;
+        for (int hintIndex = 0; hintIndex < hintStrings.size(); hintIndex++) {
+            hintRoll -= hintWeights.get(hintIndex);
+            if (hintRoll <= 0)
+                return hintStrings.get(hintIndex);
+        }
+
+        return "The other team isn't doing anything noteworthy.";
     }
 
     public String getFullDescription() {
@@ -111,30 +136,40 @@ public class Play {
         OffensivePlay insideRun = new OffensivePlay("Inside run", "A conservative run up the middle.", OffensivePlay.type.RUN);
         insideRun.runBlocking = 2 * scale;
         insideRun.runPotential = -1;
+        insideRun.addHintString("The running back is lining up near the inside.", 1);
         plays.add(insideRun);
 
         OffensivePlay outsideRun = new OffensivePlay("Outside run", "A run to the outside with more risk but more potential.", OffensivePlay.type.RUN);
         outsideRun.runBlocking = -2 * scale;
         outsideRun.runPotential = 2;
+        outsideRun.addHintString("The running back is lining up near the outside.", 1);
         plays.add(outsideRun);
 
         OffensivePlay shortPass = new OffensivePlay("Short pass", "A conservative pass with a higher completion percentage.", OffensivePlay.type.PASS);
         shortPass.passBlocking = 1 * scale;
         shortPass.catchMod = 2 * scale;
         shortPass.passPotential = -1;
+        shortPass.addHintString("The receivers are getting ready for a short pass.", 1);
         plays.add(shortPass);
 
         OffensivePlay mediumPass = new OffensivePlay("Medium pass", "A regular pass.", OffensivePlay.type.PASS);
+        mediumPass.addHintString("The receivers are getting ready for a medium pass.", 1);
         plays.add(mediumPass);
 
         OffensivePlay deepPass = new OffensivePlay("Deep pass", "A longer pass that's harder to achieve.", OffensivePlay.type.PASS);
         deepPass.passBlocking = -1 * scale;
         deepPass.sackMod = 2 * scale;
         deepPass.passPotential = 3;
+        deepPass.addHintString("The receivers are getting ready to book it.", 1);
         plays.add(deepPass);
 
-        plays.add(new OffensivePlay("Punt", "Punt the ball.", OffensivePlay.type.PUNT));
-        plays.add(new OffensivePlay("Field Goal", "Try to kick the ball through the uprights.", OffensivePlay.type.KICK));
+        OffensivePlay puntPlay = new OffensivePlay("Punt", "Punt the ball.", OffensivePlay.type.PUNT);
+        puntPlay.addHintString("The special teams unit is out on the field in punt formation.", 1);
+        plays.add(puntPlay);
+
+        OffensivePlay fgPlay = new OffensivePlay("Field Goal", "Try to kick the ball through the uprights.", OffensivePlay.type.KICK);
+        fgPlay.addHintString("The kicking team is coming out and the kicker is warming up.", 1);
+        plays.add(fgPlay);
 
         return plays;
     }
@@ -168,7 +203,7 @@ public class Play {
     }
 
     public static ArrayList<DefensivePlay> getDefensivePlaysNoAuto() {
-        ArrayList<DefensivePlay> plays = new ArrayList<DefensivePlay>();
+        ArrayList<DefensivePlay> plays = new ArrayList<>();
 
         plays.add(new DefensivePlay("Balanced", "A nice balanced defense.", DefensivePlay.expect.BALANCED));
 
@@ -179,6 +214,7 @@ public class Play {
         expectRun.passPotential = 2;
         expectRun.catchMod = 2 * scale;
         expectRun.intMod = -2 * scale;
+        expectRun.addHintString("The linebackers are stuffing the box.", 1);
         plays.add(expectRun);
 
         DefensivePlay expectPass = new DefensivePlay("Expect Pass", "Tell your players to be ready for a pass.", DefensivePlay.expect.PASS);
@@ -188,6 +224,7 @@ public class Play {
         expectPass.passPotential = -2;
         expectPass.catchMod = -2 * scale;
         expectPass.intMod = 2 * scale;
+        expectPass.addHintString("The defense is backing away from the line of scrimmage.", 1);
         plays.add(expectPass);
 
         DefensivePlay blitz = new DefensivePlay("Blitz", "Send extra defenders forward. Higher chance of creating big plays on either side.", DefensivePlay.expect.BALANCED);
@@ -197,6 +234,7 @@ public class Play {
         blitz.passPotential = 3;
         blitz.sackMod = 3 * scale;
         blitz.intMod = 3 * scale;
+        blitz.addHintString("The defensive backs are cheating forward.", 1);
         plays.add(blitz);
 
         DefensivePlay puntReturn = new DefensivePlay("Punt return", "Put a man deep to return a punt.", DefensivePlay.expect.PUNT_RETURN);
@@ -206,12 +244,14 @@ public class Play {
         puntReturn.passPotential = 3;
         puntReturn.sackMod = -4 * scale;
         puntReturn.kickReturnMod = 20;
+        puntReturn.addHintString("The defense put a return man deep.", 1);
         plays.add(puntReturn);
 
         DefensivePlay blockKick = new DefensivePlay("Block kick", "Try to block a punt or a field goal.", DefensivePlay.expect.KICK_BLOCK);
         blockKick.runPotential = 3;
         blockKick.passPotential = 3;
         blockKick.kickBlockMod = 5;
+        blockKick.addHintString("The defense put everyone on the line of scrimmage.", 1);
         plays.add(blockKick);
 
         return plays;

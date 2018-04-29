@@ -5,6 +5,16 @@
     android:layout_height="match_parent"
     android:padding="8sp">
 
+    <TextView
+        android:id="@+id/textPlayHint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="30sp"
+        android:paddingEnd="10sp"
+        android:paddingStart="10sp"
+        android:textAlignment="center"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

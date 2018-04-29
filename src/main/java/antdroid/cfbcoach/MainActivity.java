@@ -3450,6 +3450,12 @@ public class MainActivity extends AppCompatActivity {
             playTypeSelection[ii] = plays.get(ii).name;
         }
 
+        final TextView playHint = dialog.findViewById(R.id.textPlayHint);
+        if (playerIsOffense)
+            playHint.setText(g.defensePlayHint);
+        else
+            playHint.setText(g.offensePlayHint);
+
         final TextView playDescription = dialog.findViewById(R.id.textPlayDescription);
 
         // Play Type Selection Spinner

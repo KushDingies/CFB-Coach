@@ -103,6 +103,9 @@ public class Game implements Serializable {
     public String lastPlayLog;
     private String playDetails;
 
+    public String offensePlayHint;
+    public String defensePlayHint;
+
     //private variables used when simming games
     private int gameTime;
     private void runGameTime() {
@@ -362,6 +365,8 @@ public class Game implements Serializable {
         lastPlayLog = "";
         gameEventLog = "";
         playDetails = "";
+        offensePlayHint = "";
+        defensePlayHint = "";
         gameLog(awayTeam.rankTeamPollScore + " " + awayTeam.abbr + " (" + awayTeam.wins + "-" + awayTeam.losses + ") @ #" +
                 homeTeam.rankTeamPollScore + " " + homeTeam.abbr + " (" + homeTeam.wins + "-" + homeTeam.losses + ")" + "\n" +
                 "---------------------------------------------------------\n\n" +
@@ -487,6 +492,9 @@ public class Game implements Serializable {
 
         autoChooseOffensivePlay();
         autoChooseDefensivePlay();
+
+        offensePlayHint = getOffense().teamSelectedPlay.getRandomHintString();
+        defensePlayHint = getDefense().teamSelectedPlay.getRandomHintString();
 
     }
 
